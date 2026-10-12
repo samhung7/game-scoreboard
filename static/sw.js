@@ -1,5 +1,5 @@
 // Offline cache so the boards still work in a gym with bad signal.
-const CACHE = "scoreboard-v9";
+const CACHE = "scoreboard-v10";
 const ASSETS = ["./", "index.html", "badminton.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "sounds/manifest.json", "css/base.css", "css/basketball.css", "css/badminton.css", "js/config.js", "js/spotify.js", "js/kit.js", "js/basketball.js", "js/badminton.js"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener("activate", (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))))); self.clients.claim(); });

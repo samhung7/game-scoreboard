@@ -318,14 +318,18 @@
     $("timeOv").hidden = true; save(); render();
   });
   $("timeBtn").addEventListener("click", openTime);
-  let pressTimer = 0, pressed = false;
+  // On phones the sheet opens under the finger, so the tap that ends a long press would land on the sheet
+  // (and close it, or press a button there). That one tap is swallowed.
+  let pressTimer = 0, pressed = false, swallowUntil = 0;
   ["game", "shot"].forEach((id) => {
     const el = $(id);
     el.addEventListener("pointerdown", () => { pressed = false; clearTimeout(pressTimer); pressTimer = setTimeout(() => { pressed = true; Kit.haptic(); openTime(); }, 550); });
-    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => el.addEventListener(ev, () => clearTimeout(pressTimer)));
-    el.addEventListener("click", (e) => { if (pressed) { pressed = false; e.stopImmediatePropagation(); } }, true); // a long press is not also a tap
+    ["pointerup", "pointercancel"].forEach((ev) => el.addEventListener(ev, () => clearTimeout(pressTimer)));
+    el.addEventListener("pointerleave", () => { if (!pressed) clearTimeout(pressTimer); });
     el.addEventListener("contextmenu", (e) => e.preventDefault());
   });
+  document.addEventListener("pointerup", () => { if (pressed) { pressed = false; swallowUntil = performance.now() + 600; } }, true);
+  document.addEventListener("click", (e) => { if (performance.now() < swallowUntil) { swallowUntil = 0; e.preventDefault(); e.stopImmediatePropagation(); } }, true);
   $("shotShort").addEventListener("click", () => resetShot(true));
 
   document.addEventListener("keydown", (e) => {

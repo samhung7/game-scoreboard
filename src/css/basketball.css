@@ -1,5 +1,8 @@
 /* Basketball layout: clocks centered on top, two team columns below, DJ strip at the bottom. */
-.clocks { display: grid; justify-items: center; gap: 6px; }
+/* game clock with the shot clock to its right, controls underneath */
+.clocks { display: grid; grid-template-columns: auto auto; justify-content: center; align-items: stretch; gap: 6px 10px; }
+.clocks .game { order: 1; } .clocks .shot { order: 2; display: grid; place-items: center; font-size: clamp(40px, 11vmin, 104px); } .clockctl { order: 3; grid-column: 1 / -1; }
+.clocks .game, .clocks .shot { -webkit-touch-callout: none; }
 .shot {
   min-width: 5.2ch; padding: 2px 14px; border-radius: 10px; background: #000; border: 2px solid var(--line);
   font-family: var(--f-clock); font-size: clamp(30px, 7vmin, 64px); line-height: 1.1; color: var(--shot); text-align: center;
@@ -53,6 +56,15 @@
   .board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; min-height: 0; }
   .teams { display: contents; }
   .home { order: 1; } .clocks { order: 2; align-content: center; } .away { order: 3; }
+  .clocks { grid-template-columns: auto; justify-items: center; } /* narrow middle column: clocks stack again */
+  .clocks .shot { order: 0; display: block; font-size: clamp(22px, 8vh, 40px); }
+  /* time sheet side by side so 套用 stays on screen */
+  #timeOv .sheet { width: min(760px, 100%); grid-template-columns: 1.4fr 1fr; gap: 10px 18px; padding: 14px 18px; align-items: start; }
+  #timeOv .sheet > h2, #timeOv .sheet > .actions { grid-column: 1 / -1; }
+  #timeOv .sheet > p { display: none; }
+  #timeOv h2 { font-size: 20px; }
+  #timeOv .num.big { font-size: 30px; padding: 2px; }
+  #timeOv .btn { min-height: 38px; }
   .team {
     grid-template-columns: 1fr auto; grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas: "name name" "stats stats" "score pts"; gap: 6px;

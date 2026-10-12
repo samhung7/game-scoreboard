@@ -1,0 +1,19 @@
+/* Volleyball, tennis, pickleball, table tennis: the badminton layout plus a line under each name
+   for timeouts (and games in the set for tennis), and a call line under the match panel. */
+.team { grid-template-rows: auto auto 1fr auto; }
+.meta { display: flex; justify-content: center; align-items: center; gap: 14px; font-size: 13px; color: var(--muted); min-height: 22px; flex-wrap: wrap; }
+.meta:has(.extra:empty):has(.tos[hidden]) { display: none; }
+.meta .extra b { font: 900 20px var(--f-score); color: var(--fg); margin-left: 4px; }
+.tos { display: inline-flex; align-items: center; gap: 6px; }
+.dots { display: inline-flex; gap: 5px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; background: var(--tc); border: 2px solid var(--tc); }
+.dot.used { background: transparent; border-color: var(--line); }
+.call { font: 700 14px var(--f-ui); color: var(--blush); letter-spacing: .06em; text-align: center; min-height: 1.2em; }
+.call:empty { display: none; }
+@media (max-width: 520px) { .dot { width: 14px; height: 14px; } .ctl .btn { padding: 0 10px; font-size: 14px; } }
+@media (orientation: landscape) and (max-height: 540px) {
+  .team { grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "name name" "meta meta" "score pts"; }
+  .meta { grid-area: meta; min-height: 0; font-size: 12px; }
+  .dot { width: 12px; height: 12px; }
+  .call { font-size: 12px; }
+}

@@ -106,6 +106,14 @@ const Kit = (() => {
       for (let r = 0; r < 2; r++) { const b = t + r * 1.2; kick(b); kick(b + 0.3); clap(b + 0.6); }
     },
     buzzer() { const c = ctx(), t = c.currentTime; const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1800; lp.connect(master()); [196, 198, 392].forEach((f) => { const o = c.createOscillator(); const g = c.createGain(); o.type = "square"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.02); g.gain.setValueAtTime(0.14, t + 1.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.25); o.connect(g).connect(lp); o.start(t); o.stop(t + 1.3); }); },
+    ping() { // hollow celluloid / plastic ball: two quick knocks, the second softer
+      const c = ctx(), t = c.currentTime;
+      [[0, 1], [0.16, 0.55]].forEach(([st, lvl]) => {
+        tone("sine", 2350, t + st, 0.06, 0.35 * lvl); tone("triangle", 1180, t + st, 0.05, 0.25 * lvl);
+        const s = c.createBufferSource(); s.buffer = noiseBuf(c, 0.02); const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 3000;
+        const g = c.createGain(); env(g, t + st, 0.001, 0.3 * lvl, 0.015); s.connect(hp).connect(g).connect(master()); s.start(t + st);
+      });
+    },
     beep() { const c = ctx(), t = c.currentTime; tone("square", 880, t, 0.15, 0.12); tone("square", 880, t + 0.25, 0.15, 0.12); },
   };
 
@@ -251,6 +259,10 @@ const Kit = (() => {
   const PAD_SETS = {
     basketball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["brick", "🧱", "打鐵"], ["coin", "🪙", "金幣"], ["swish", "🏀", "空心"], ["defense", "🥁", "防守"], ["buzzer", "🚨", "蜂鳴器"]],
     badminton: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    volleyball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "扣殺"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    tennis: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "🎾", "Ace"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    pickleball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["ping", "🥒", "砰"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    tabletennis: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["ping", "🏓", "乒乓"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["buzzer", "🚨", "蜂鳴器"]],
   };
   function pads(el, set) {
     const list = PAD_SETS[set];
@@ -272,7 +284,7 @@ const Kit = (() => {
   }
 
   /* ---------- score reel: drag down = more points, drag up = fewer ---------- */
-  function reel({ box, strip, get, set, max = 200, locked = () => false, commit, tap }) {
+  function reel({ box, strip, get, set, max = 200, locked = () => false, commit, tap, fmt = String }) {
     let drag = null, wheelAcc = 0;
     const stepPx = () => Math.max(64, Math.min(160, box.clientHeight * 0.45)); // finger travel per point
     const reelH = () => box.clientHeight;                                      // spacing between numbers
@@ -281,7 +293,7 @@ const Kit = (() => {
     function draw() {
       const n = get(); let html = "";
       // larger number waits above, smaller below, so pulling down brings the next one in
-      for (let k = -1; k <= 1; k++) { const v = n - k; if (v < 0 || v > max) continue; html += `<span class="n${k ? " ghost" : ""}" style="--k:${k}">${v}</span>`; }
+      for (let k = -1; k <= 1; k++) { const v = n - k; if (v < 0 || v > max) continue; html += `<span class="n${k ? " ghost" : ""}" style="--k:${k}">${fmt(v)}</span>`; }
       strip.innerHTML = html; box.setAttribute("aria-valuenow", n);
     }
     box.addEventListener("pointerdown", (e) => {
@@ -351,6 +363,14 @@ const Kit = (() => {
   }, { passive: false });
   document.addEventListener("dblclick", (e) => e.preventDefault(), { passive: false });
   ["gesturestart", "gesturechange"].forEach((ev) => document.addEventListener(ev, (e) => e.preventDefault(), { passive: false })); // pinch zoom on iOS
+
+  /* ---------- sport switcher dropdown ---------- */
+  const sportSel = document.getElementById("sportSel");
+  if (sportSel) {
+    const here = location.pathname.split("/").pop() || "./";
+    sportSel.value = [...sportSel.options].some((o) => o.value === here) ? here : "./";
+    sportSel.addEventListener("change", () => location.assign(sportSel.value));
+  }
 
   /* ---------- in-page confirmation (the browser's confirm() is not used) ---------- */
   function confirmBox({ title, text, ok = "確定", danger = true }) {

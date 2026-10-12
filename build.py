@@ -1,7 +1,7 @@
 """Builds the site from src/.
 
 src/
-  index.html, badminton.html   page markup (body only; the build adds <head> and the PWA hooks)
+  *.html                       page markup (body only; the build adds <head> and the PWA hooks)
   css/                         base.css (shared look) + one stylesheet per page
   js/                          kit.js (sounds, DJ pads, music, score reel) + one script per page
   partials/                    HTML shared by several pages, pulled in with <!--@include partials/x.html-->
@@ -13,11 +13,11 @@ import pathlib, re, shutil
 
 root = pathlib.Path(__file__).parent
 src = root / "src"
-PAGES = ["index.html", "badminton.html"]
+PAGES = ["index.html", "badminton.html", "volleyball.html", "tennis.html", "pickleball.html", "tabletennis.html"]
 INCLUDE = re.compile(r"<!--@include (\S+)-->")
 
 def expand(text):
-    return INCLUDE.sub(lambda m: (src / m.group(1)).read_text(), text)
+    return INCLUDE.sub(lambda m: expand((src / m.group(1)).read_text()), text)  # partials may include partials
 
 HEAD = """<!doctype html>
 <html lang="zh-Hant">
@@ -28,7 +28,7 @@ HEAD = """<!doctype html>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="記分板">
+<meta name="apple-mobile-web-app-title" content="比賽記分板">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">

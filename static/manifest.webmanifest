@@ -1,6 +1,6 @@
 {
-  "name": "球場記分板（籃球・羽球）",
-  "short_name": "記分板",
+  "name": "比賽記分板",
+  "short_name": "比賽記分板",
   "lang": "zh-Hant",
   "start_url": "./",
   "scope": "./",

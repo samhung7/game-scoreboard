@@ -1,0 +1,103 @@
+<div class="app" id="app">
+  <div class="topbar">
+    <!--@include partials/sportnav.html-->
+    <button class="chip chipbtn" id="modeChip"><strong></strong><span class="swap" aria-hidden="true">⇄</span></button>
+    <button class="chip rulebtn" id="ruleChip" aria-label="比賽設定"></button>
+    <span class="spacer"></span>
+    <button class="iconbtn" id="fsBtn" aria-label="全螢幕"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="iconbtn" id="helpBtn" aria-label="操作說明"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
+    <button class="iconbtn" id="setBtn" aria-label="比賽設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+  </div>
+
+  <div class="board" id="board">
+    <div class="center">
+      <div class="games" aria-label="局數">
+        <span class="gs"><span class="ga" id="gA">0</span><span class="sep" id="unitSep">局</span><span class="gb" id="gB">0</span></span>
+        <span class="sub"><span class="per" id="gameNo">第 1 局</span> · 比賽時間 <span id="elapsed">0:00</span></span>
+      </div>
+      <div class="call" id="call" aria-live="polite"></div>
+      <div class="history" id="hist"></div>
+      <div class="ctl">
+        <button class="btn" id="undoBtn" aria-label="復原">↶<span class="lbl"> 復原</span></button>
+        <button class="btn" id="swapBtn" aria-label="換場">⇄<span class="lbl"> 換場</span></button>
+        <button class="btn" id="serveBtn" aria-label="把發球權交給另一邊">🔁<span class="lbl"> 發球權</span></button>
+        <button class="btn" id="restBtn" aria-label="休息計時">⏱<span class="lbl"> 休息計時</span></button>
+        <button class="btn" id="resetScore" aria-label="這一局比分歸零">↺<span class="lbl"> 歸零</span></button>
+      </div>
+    </div>
+
+    <div class="teams">
+      <section class="team home" data-side="a"></section>
+      <section class="team away" data-side="b"></section>
+    </div>
+  </div>
+
+  <div class="dj">
+    <div class="djlabel">DJ</div>
+    <div class="pads" id="pads"></div>
+  </div>
+</div>
+
+<template id="teamTpl">
+  <input class="name" maxlength="24">
+  <div class="meta"><span class="extra"></span><span class="tos"><span class="tl">暫停</span><span class="dots"></span></span></div>
+  <div class="score" role="spinbutton" aria-valuemin="0" tabindex="0">
+    <div class="stats"><span class="serve" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="7"/></svg>發球</span><span class="court"></span></div>
+    <span class="lead"></span>
+    <div class="reel"></div>
+    <span class="hint" aria-hidden="true"><span>▲</span><span>▼</span></span>
+  </div>
+  <div class="pts"><button class="plus">+1 得分</button><button class="minus">−1</button></div>
+</template>
+
+<div class="overlay" id="setOv" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="setTitle">
+    <h2 id="setTitle">比賽設定</h2>
+    <div id="setRows" style="display:grid;gap:14px"></div>
+    <div class="hr"></div>
+    <div class="actions">
+      <button class="btn" id="setHelp">操作說明</button>
+      <button class="btn danger" id="newGame">開新比賽</button>
+      <button class="btn primary" id="setDone">套用</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="restOv" hidden>
+  <div class="sheet result rest">
+    <span class="tag" id="restTag">休息</span>
+    <div class="winner" id="restTitle">休息 60 秒</div>
+    <div class="clock" id="restClock">1:00</div>
+    <p id="restDetail"></p>
+    <div class="actions"><button class="btn" id="restUndo">回到記分板修正</button><button class="btn primary" id="restGo">繼續比賽</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="resOv" hidden>
+  <div class="sheet result">
+    <span class="tag" id="resWhy">比賽結束</span>
+    <div class="winner" id="resWinner"></div>
+    <div class="final"><span class="h" id="resH">0</span><span class="dash">:</span><span class="a" id="resA">0</span></div>
+    <p id="resDetail"></p>
+    <div class="actions"><button class="btn" id="resBack">回到記分板修正</button><button class="btn primary" id="resNew">再來一場</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!--@include partials/music.html-->
+
+<div class="overlay" id="keyOv" hidden>
+  <div class="sheet">
+    <h2>操作說明</h2>
+    <div id="helpText" style="display:grid;gap:10px"></div>
+    <div class="keys">
+      <kbd>Q / P</kbd><span>左邊 / 右邊 贏這一球</span>
+      <kbd>Z</kbd><span>復原上一球</span>
+      <kbd>X</kbd><span>換場</span>
+      <kbd>1 – 7</kbd><span>DJ 音效</span>
+      <kbd>M</kbd><span>音樂 播放 / 暫停</span>
+    </div>
+    <div class="actions"><button class="btn" id="keyClose">關閉</button></div>
+  </div>
+</div>

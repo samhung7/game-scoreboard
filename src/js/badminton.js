@@ -209,7 +209,7 @@
   $("restBtn").addEventListener("click", () => startRest(S.score.a + S.score.b === 0 && S.games.length ? "game" : "mid"));
   const leftSide = () => (S.swapped ? "b" : "a");
   document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.closest?.(".overlay:not([hidden])") || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
     if (k === "q") return rally(leftSide());
     if (k === "p") return rally(other(leftSide()));

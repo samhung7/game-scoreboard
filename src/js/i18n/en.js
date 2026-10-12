@@ -394,7 +394,9 @@ window.I18N_DICT = {
 "決勝搶十": "Match tiebreak",
 "節": "periods",
 "秒": "sec",
-"次": "times"
+"次": "times",
+"分鐘": "min",
+"籃球記分板": "Basketball Scoreboard"
 };
 /* words that differ by sport, e.g. a volleyball 局 is a set */
 window.I18N_SPORT = {

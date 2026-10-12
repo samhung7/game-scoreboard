@@ -333,7 +333,7 @@
   $("shotShort").addEventListener("click", () => resetShot(true));
 
   document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.closest?.(".overlay:not([hidden])") || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase(), sign = e.shiftKey ? -1 : 1;
     if (e.code === "Space") { e.preventDefault(); setRunning(!S.running); return; }
     if (k === "s") return S.cfg.sOn && !shotFollowsMain() && setShotRunning(!S.shotRunning);

@@ -61,7 +61,8 @@ const I18N = (() => {
   const skip = (n) => n.parentElement?.closest("[data-notr], script, style");
   function textNode(n) {
     if (done.get(n) === n.nodeValue || skip(n)) return;
-    const t = tr(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t;
+    const v = n.parentElement?.tagName === "TITLE" ? n.nodeValue.split("｜")[0] : n.nodeValue; // the tab shows just the board's name; the long title is for search engines
+    const t = tr(v); if (t !== n.nodeValue) n.nodeValue = t;
     done.set(n, n.nodeValue);
   }
   function attrs(el) {

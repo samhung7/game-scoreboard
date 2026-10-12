@@ -394,7 +394,9 @@ window.I18N_DICT = {
 "決勝搶十": "决胜抢十",
 "節": "节",
 "秒": "秒",
-"次": "次"
+"次": "次",
+"分鐘": "分钟",
+"籃球記分板": "篮球记分板"
 };
 /* words that differ by sport, e.g. a volleyball 局 is a set */
 window.I18N_SPORT = {};

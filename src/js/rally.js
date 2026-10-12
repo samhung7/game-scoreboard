@@ -24,7 +24,6 @@
   const ctx = () => ({ idx: S.units.length, deciding: S.units.length === best() - 1, best: best() }); // where we are in the match
 
   const Pads = Kit.pads($("pads"), SP.pads || "rally");
-  document.title = SP.title;
   $("unitSep").textContent = SP.unit;
 
   /* ---------- sides ---------- */
@@ -274,7 +273,7 @@
   });
   const leftSide = () => (S.swapped ? "b" : "a");
   document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.closest?.(".overlay:not([hidden])") || e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
     if (k === "q") return rally(leftSide());
     if (k === "p") return rally(other(leftSide()));

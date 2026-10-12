@@ -394,7 +394,9 @@ window.I18N_DICT = {
 "決勝搶十": "매치 타이브레이크",
 "節": "쿼터",
 "秒": "초",
-"次": "회"
+"次": "회",
+"分鐘": "분",
+"籃球記分板": "농구 스코어보드"
 };
 /* words that differ by sport, e.g. a volleyball 局 is a set */
 window.I18N_SPORT = {

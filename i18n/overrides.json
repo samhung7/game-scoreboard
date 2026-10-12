@@ -6,5 +6,7 @@
  "決勝搶十": {"en": "Match tiebreak", "ja": "マッチタイブレーク", "ko": "매치 타이브레이크", "zh-Hans": "决胜抢十"},
  "節": {"en": "periods", "ja": "ピリオド", "ko": "쿼터", "zh-Hans": "节"},
  "秒": {"en": "sec", "ja": "秒", "ko": "초", "zh-Hans": "秒"},
- "次": {"en": "times", "ja": "回", "ko": "회", "zh-Hans": "次"}
+ "次": {"en": "times", "ja": "回", "ko": "회", "zh-Hans": "次"},
+ "分鐘": {"en": "min", "ja": "分", "ko": "분", "zh-Hans": "分钟"},
+ "籃球記分板": {"en": "Basketball Scoreboard", "ja": "バスケットボール スコアボード", "ko": "농구 스코어보드", "zh-Hans": "篮球记分板"}
 }

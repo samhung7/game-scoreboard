@@ -14,7 +14,7 @@
         <div class="inline"><input class="txt" id="spUrl" placeholder="https://open.spotify.com/playlist/…" inputmode="url"><button class="btn primary" id="spLoad">載入</button></div>
       </details>
       <div class="embed" id="spBox"><div class="empty" id="spEmpty">選一個歌單就會出現在這裡</div><div id="spEmbed"></div></div>
-      <p class="note">在這裡播放時，瀏覽器沒登入 Spotify 只能聽 30 秒試聽（iPhone 常見）。想聽完整歌曲，按「在 Spotify App 播放」，再打開下方「和其他 App 的音樂一起播」，音效就會疊在音樂上。</p>
+      <p class="note">在這裡播放時，瀏覽器沒登入 Spotify 只能聽 30 秒試聽（iPhone 常見）。想聽完整歌曲，按「在 Spotify App 播放」，音效會直接疊在音樂上，不會把它停掉。</p>
       <div class="actions" style="justify-content:flex-start">
         <a class="btn" id="spOpen" href="https://open.spotify.com" target="_blank" rel="noopener">在 Spotify App 播放</a>
       </div>
@@ -32,11 +32,7 @@
         <input type="range" id="loVol" min="0" max="100" value="80" aria-label="音量">
       </div>
     </div>
-    <div class="hr"></div>
-    <div class="row"><label>和其他 App 的音樂一起播<small>音效疊在 Spotify App 的音樂上，不會把它停掉（iPhone 需關閉靜音模式才聽得到音效）</small></label>
-      <button class="switch" id="mix" role="switch" aria-checked="false" aria-label="和其他 App 的音樂一起播"></button></div>
-    <div class="row"><label>播音效時讓音樂讓路<small>Spotify 會暫停一下再接著播，手機音樂會壓低音量</small></label>
-      <button class="switch" id="duck" role="switch" aria-checked="true" aria-label="播音效時讓音樂讓路"></button></div>
+    <p class="note">音效一律疊在音樂上播放。iPhone 要關閉靜音模式才聽得到音效。</p>
     <div class="actions"><button class="btn" id="muClose">關閉（音樂繼續播）</button></div>
   </div>
 </div>

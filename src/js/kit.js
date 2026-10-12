@@ -6,7 +6,7 @@ const Kit = (() => {
   let ac;
   const ctx = () => { if (!ac) { applyMix(); ac = new (window.AudioContext || window.webkitAudioContext)(); } if (ac.state === "suspended") ac.resume(); return ac; };
   // "ambient" lets effects play over music from another app (Spotify) instead of stopping it; Safari 17+ only
-  const applyMix = () => { try { if (navigator.audioSession) navigator.audioSession.type = mPrefs.mix ? "ambient" : "playback"; } catch (e) {} };
+  const applyMix = () => { try { if (navigator.audioSession) navigator.audioSession.type = "ambient"; } catch (e) {} };
   const master = () => { const c = ctx(); if (!c._m) { c._m = c.createGain(); c._m.gain.value = 0.9; c._m.connect(c.destination); } return c._m; };
   const noiseBuf = (c, sec) => { const b = c.createBuffer(1, Math.max(1, c.sampleRate * sec), c.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
   const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); };
@@ -62,6 +62,23 @@ const Kit = (() => {
         [233, 236, 466, 349].forEach((f) => { const o = tone("sawtooth", f, t + st, d, 0.12, lp); o.frequency.setValueAtTime(f * 0.94, t + st); o.frequency.exponentialRampToValueAtTime(f, t + st + 0.06); });
       });
     },
+    whistle() { // referee pea whistle: a short tweet then a long blast, the pea makes the fast warble
+      const c = ctx(), t = c.currentTime;
+      [[0, 0.16], [0.26, 0.75]].forEach(([st, d]) => {
+        const s0 = t + st, s1 = s0 + d, out = c.createGain(); out.connect(master());
+        out.gain.setValueAtTime(0.0001, s0); out.gain.exponentialRampToValueAtTime(0.32, s0 + 0.025); out.gain.setValueAtTime(0.32, s1 - 0.05); out.gain.exponentialRampToValueAtTime(0.0001, s1);
+        const trem = c.createGain(); trem.gain.value = 0.65; trem.connect(out);
+        const lfo = c.createOscillator(); lfo.frequency.value = rnd(32, 38); const lg = c.createGain(); lg.gain.value = 0.35; lfo.connect(lg).connect(trem.gain);
+        [[2850, 0.5, "sine"], [2985, 0.35, "sine"], [5700, 0.06, "triangle"]].forEach(([f, lvl, type]) => {
+          const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f * 0.97, s0); o.frequency.linearRampToValueAtTime(f, s0 + 0.04);
+          const fm = c.createGain(); fm.gain.value = f * 0.025; lfo.connect(fm).connect(o.frequency);
+          const g = c.createGain(); g.gain.value = lvl; o.connect(g).connect(trem); o.start(s0); o.stop(s1 + 0.02);
+        });
+        const n = c.createBufferSource(); n.buffer = noiseBuf(c, d + 0.05); const bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2900; bp.Q.value = 4;
+        const ng = c.createGain(); ng.gain.value = 0.18; n.connect(bp).connect(ng).connect(trem); n.start(s0); n.stop(s1 + 0.02);
+        lfo.start(s0); lfo.stop(s1 + 0.02);
+      });
+    },
     sadhorn() {
       const c = ctx(), t = c.currentTime;
       [[293, 0], [277, 0.45], [261, 0.9], [247, 1.35]].forEach(([f, st], i) => {
@@ -111,13 +128,13 @@ const Kit = (() => {
 
   /* ---------- music: Spotify embed (works without Premium) + local files ---------- */
   const MKEY = "scoreboard-music";
-  let mPrefs = { duck: true, spUrl: "", mix: false };
+  let mPrefs = { spUrl: "" };
   try { mPrefs = { ...mPrefs, ...JSON.parse(localStorage.getItem(MKEY) || "{}") }; } catch (e) {}
   const mSave = () => { try { localStorage.setItem(MKEY, JSON.stringify(mPrefs)); } catch (e) {} };
   const Music = (() => {
     let sp = null, spPaused = true, api = null, apiWaiters = [], onChange = () => {};
     const audio = new Audio(); audio.preload = "auto";
-    let files = [], cur = -1, vol = 0.8, duckTimer = 0;
+    let files = [], cur = -1, vol = 0.8;
     function spUri(url) {
       const m = String(url).trim().match(/(?:open\.spotify\.com\/(?:intl-[a-z-]+\/)?|spotify:)(playlist|album|track|artist|show|episode)[/:]([A-Za-z0-9]{10,})/);
       return m ? `spotify:${m[1]}:${m[2]}` : null;
@@ -165,12 +182,6 @@ const Kit = (() => {
       if (useLocal) { if (!files.length) return; if (audio.paused) { if (cur < 0) playIdx(0); else audio.play().catch(() => {}); } else audio.pause(); return; }
       if (sp) sp.togglePlay();
     }
-    function duck(sec) {
-      if (!mPrefs.duck) return;
-      clearTimeout(duckTimer);
-      if (!audio.paused) { audio.volume = vol * 0.2; duckTimer = setTimeout(() => (audio.volume = vol), sec * 1000 + 150); }
-      else if (sp && !spPaused) { sp.pause(); duckTimer = setTimeout(() => sp.resume(), sec * 1000 + 150); }
-    }
     function init(changed) {
       onChange = changed;
       $("loFiles").addEventListener("change", (e) => {
@@ -189,13 +200,9 @@ const Kit = (() => {
       const tab = (isSp) => { $("tabSp").setAttribute("aria-selected", String(isSp)); $("tabLo").setAttribute("aria-selected", String(!isSp)); $("paneSp").hidden = !isSp; $("paneLo").hidden = isSp; };
       $("tabSp").addEventListener("click", () => tab(true));
       $("tabLo").addEventListener("click", () => tab(false));
-      $("duck").setAttribute("aria-checked", String(mPrefs.duck));
-      $("duck").addEventListener("click", () => { mPrefs.duck = !mPrefs.duck; $("duck").setAttribute("aria-checked", String(mPrefs.duck)); mSave(); });
       $("muClose").addEventListener("click", () => $("muOv").classList.add("parked"));
       $("muOv").addEventListener("click", (e) => { if (e.target.id === "muOv") $("muOv").classList.add("parked"); });
       if (mPrefs.spUrl) $("spUrl").value = mPrefs.spUrl;
-      $("mix").setAttribute("aria-checked", String(mPrefs.mix));
-      $("mix").addEventListener("click", () => { mPrefs.mix = !mPrefs.mix; $("mix").setAttribute("aria-checked", String(mPrefs.mix)); mSave(); applyMix(); });
       $("spLists").addEventListener("click", (e) => {
         const b = e.target.closest("button[data-id]"); if (!b) return;
         $("spLists").querySelectorAll(".cur").forEach((x) => x.classList.remove("cur")); b.classList.add("cur");
@@ -238,7 +245,7 @@ const Kit = (() => {
       }
     }
     return {
-      init, toggle, duck,
+      init, toggle,
       open: () => $("muOv").classList.remove("parked"),
       playing: () => !audio.paused || !!(sp && !spPaused),
       label: () => (!audio.paused && cur >= 0 ? files[cur].name.replace(/\.[^.]+$/, "") : sp && !spPaused ? "Spotify 播放中" : "Spotify / 手機音樂"),
@@ -246,17 +253,16 @@ const Kit = (() => {
   })();
 
   /* ---------- DJ pads ---------- */
-  // [key, icon, label, seconds the music should step aside]
+  // [key, icon, label]
+  const WHISTLE = '<span class="svgico"><svg viewBox="0 0 32 32" width="1em" height="1em"><defs><linearGradient id="whG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f5fb"/><stop offset="1" stop-color="#8d9bb3"/></linearGradient></defs><path d="M6 8.5C3 5 1.5 3.5 1.5 2" fill="none" stroke="#f87575" stroke-width="2" stroke-linecap="round"/><circle cx="7.2" cy="10" r="2.6" fill="none" stroke="#c4cddc" stroke-width="1.6"/><rect x="11" y="9" width="19.5" height="8" rx="2" fill="url(#whG)" stroke="#4d5b75" stroke-width="1.2"/><circle cx="12" cy="20" r="9.5" fill="url(#whG)" stroke="#4d5b75" stroke-width="1.2"/><rect x="14" y="10.2" width="10" height="5.6" fill="url(#whG)"/><circle cx="12" cy="20" r="4.4" fill="#5c95ff" opacity=".85"/><rect x="17" y="8.2" width="4.5" height="2.6" rx=".8" fill="#2b3550"/></svg></span>'; // there is no whistle emoji, so this one is drawn
   const PAD_SETS = {
-    basketball: [["cheer", "🙌", "歡呼", 3.4], ["airhorn", "📯", "空氣喇叭", 1.4], ["sadhorn", "🎺", "嘲諷喇叭", 2.8], ["brick", "🧱", "打鐵", 1], ["coin", "🪙", "金幣", 0.6], ["swish", "🏀", "空心", 0.6], ["defense", "🥁", "防守", 2.3], ["buzzer", "🚨", "蜂鳴器", 1.3]],
-    badminton: [["cheer", "🙌", "歡呼", 3.4], ["airhorn", "📯", "空氣喇叭", 1.4], ["sadhorn", "🎺", "嘲諷喇叭", 2.8], ["smash", "💥", "殺球", 0.4], ["coin", "🪙", "金幣", 0.6], ["defense", "🥁", "加油鼓", 2.3], ["buzzer", "🚨", "蜂鳴器", 1.3]],
+    basketball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["brick", "🧱", "打鐵"], ["coin", "🪙", "金幣"], ["swish", "🏀", "空心"], ["defense", "🥁", "防守"], ["buzzer", "🚨", "蜂鳴器"]],
+    badminton: [["cheer", "🙌", "歡呼"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
   };
   function pads(el, set) {
     const list = PAD_SETS[set];
     const playPad = (k) => {
-      const p = list.find((x) => x[0] === k) || [k, "", "", 1];
-      const real = play(k);
-      Music.duck(real || p[3]);
+      play(k);
       const b = el.querySelector(`[data-k="${k}"]`); if (b) { b.classList.add("hit"); setTimeout(() => b.classList.remove("hit"), 250); }
     };
     list.forEach(([k, ico, label], i) => {
@@ -273,7 +279,7 @@ const Kit = (() => {
   }
 
   /* ---------- score reel: drag down = more points, drag up = fewer ---------- */
-  function reel({ box, strip, get, set, max = 200, locked = () => false, commit }) {
+  function reel({ box, strip, get, set, max = 200, locked = () => false, commit, tap }) {
     let drag = null, wheelAcc = 0;
     const stepPx = () => Math.max(44, Math.min(110, box.clientHeight * 0.3)); // finger travel per point
     const reelH = () => box.clientHeight;                                      // spacing between numbers
@@ -288,10 +294,11 @@ const Kit = (() => {
     box.addEventListener("pointerdown", (e) => {
       if (locked()) return;
       box.setPointerCapture(e.pointerId);
-      drag = { y0: e.clientY, base: get(), last: get(), hist: [[e.timeStamp, e.clientY]] };
+      drag = { y0: e.clientY, t0: e.timeStamp, moved: 0, base: get(), last: get(), hist: [[e.timeStamp, e.clientY]] };
     });
     box.addEventListener("pointermove", (e) => {
       if (!drag) return;
+      drag.moved = Math.max(drag.moved, Math.abs(e.clientY - drag.y0));
       const units = (e.clientY - drag.y0) / stepPx();
       const k = Math.trunc(units); let frac = units - k;
       let n = drag.base + k;
@@ -301,9 +308,10 @@ const Kit = (() => {
       offset(frac);
       drag.hist.push([e.timeStamp, e.clientY]); if (drag.hist.length > 6) drag.hist.shift();
     });
-    const end = () => {
+    const end = (e) => {
       if (!drag) return;
       const d = drag; drag = null;
+      if (tap && e.type === "pointerup" && d.moved < 10 && d.last === d.base && e.timeStamp - d.t0 < 500) { offset(0, true); haptic(); tap(); return; }
       const [t0, y0] = d.hist[0], [t1, y1] = d.hist[d.hist.length - 1];
       const v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0; // px per ms, downward positive
       const extra = Math.abs(v) > 1.2 ? Math.max(-3, Math.min(3, Math.round(v * 2))) : 0; // only a hard flick adds a few more
@@ -328,22 +336,18 @@ const Kit = (() => {
     return { draw };
   }
 
-  /* ---------- haptic tap: Android vibrates; iPhone (iOS 18+) has no vibrate API, but toggling a hidden switch control gives a tick ---------- */
-  let hapticLabel = null;
+  /* ---------- haptic tap: Android vibrates; iPhone (iOS 18+) has no vibrate API, but toggling a switch control through its label gives a tick.
+     Safari only does that inside a real user gesture, and a finger touching down is not one (lifting it is), so buttons buzz on click. ---------- */
   function haptic() {
     try {
       if (navigator.vibrate) { navigator.vibrate(12); return; }
-      if (!hapticLabel) {
-        hapticLabel = document.createElement("label"); hapticLabel.setAttribute("aria-hidden", "true");
-        hapticLabel.style.cssText = "position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
-        const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", ""); i.tabIndex = -1;
-        hapticLabel.appendChild(i); document.body.appendChild(hapticLabel);
-      }
-      hapticLabel.click();
+      const label = document.createElement("label"); label.setAttribute("aria-hidden", "true"); label.style.display = "none";
+      const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", "");
+      label.appendChild(i); document.head.appendChild(label); label.click(); label.remove();
     } catch (e) {}
   }
   // every point button on every board
-  document.addEventListener("pointerdown", (e) => { if (e.target.closest(".pts button")) haptic(); });
+  document.addEventListener("click", (e) => { if (e.target.closest(".pts button")) haptic(); }, true);
 
   /* ---------- in-page confirmation (the browser's confirm() is not used) ---------- */
   function confirmBox({ title, text, ok = "確定", danger = true }) {

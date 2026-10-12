@@ -30,7 +30,7 @@
     T[s] = el;
     el.name.id = "name-" + s; el.name.setAttribute("aria-label", s === "a" ? "左邊選手名字" : "右邊選手名字");
     el.score.setAttribute("aria-valuemax", 60);
-    el.score.setAttribute("aria-label", "比分，往下滑加分、往上滑扣分");
+    el.score.setAttribute("aria-label", "比分，點一下加 1 分，往下滑加分、往上滑扣分");
     el.name.addEventListener("input", () => { S.names[s] = el.name.value.trim() || (s === "a" ? "選手 A" : "選手 B"); save(); });
     sec.querySelector(".plus").addEventListener("click", () => rally(s));
     sec.querySelector(".minus").addEventListener("click", () => adjust(s, -1));
@@ -38,6 +38,7 @@
       box: el.score, strip: sec.querySelector(".reel"), max: 60,
       get: () => S.score[s], set: (n) => { S.score[s] = n; renderLead(); }, locked: () => !!S.over || !!S.rest,
       commit: (base) => { if (S.score[s] !== base) { pushUndo(base, s); afterPoint(s, S.score[s] > base); } else render(); },
+      tap: () => rally(s),
     });
   });
 

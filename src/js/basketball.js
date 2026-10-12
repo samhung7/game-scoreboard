@@ -32,7 +32,7 @@
     };
     T[tm] = el;
     el.name.id = "name-" + tm; el.name.setAttribute("aria-label", tm === "home" ? "主隊名稱" : "客隊名稱");
-    el.score.setAttribute("aria-label", (tm === "home" ? "主隊" : "客隊") + "比分，往下滑加分、往上滑扣分");
+    el.score.setAttribute("aria-label", (tm === "home" ? "主隊" : "客隊") + "比分，點一下加基本分，往下滑加分、往上滑扣分");
     el.name.addEventListener("input", () => { S.names[tm] = el.name.value.trim() || (tm === "home" ? "主隊" : "客隊"); save(); });
     sec.querySelector('[data-act="foul+"]').addEventListener("click", () => addFoul(tm, 1));
     sec.querySelector('[data-act="foul-"]').addEventListener("click", () => addFoul(tm, -1));
@@ -41,6 +41,7 @@
       box: el.score, strip: sec.querySelector(".reel"), max: MAX,
       get: () => S.score[tm], set: (n) => { S.score[tm] = n; renderLead(); }, locked: () => !!S.over,
       commit: (base) => { if (S.score[tm] > base && !S.over) checkWin(tm); save(); render(); },
+      tap: () => addPts(tm, S.mode === "3v3" ? 1 : 2), // basic basket: 1 in 3v3, 2 in 5v5
     });
   });
 

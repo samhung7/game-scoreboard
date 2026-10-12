@@ -108,6 +108,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   display: grid; align-content: center; justify-items: center; gap: 2px; position: relative; font-size: 13px; font-weight: 700;
 }
 .pad .ico { font-size: 22px; line-height: 1; }
+.pad .svgico svg { display: block; width: 1.1em; height: 1.1em; }
 .pad kbd { position: absolute; top: 4px; right: 6px; font: 11px var(--f-clock); color: var(--muted); }
 .pad.hit { background: var(--panel-2); border-color: var(--coral); }
 .pad.music { width: 120px; border-style: dashed; color: var(--ok); }

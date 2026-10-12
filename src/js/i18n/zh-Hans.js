@@ -397,7 +397,8 @@ window.I18N_DICT = {
 "次": "次",
 "分鐘": "分钟",
 "籃球記分板": "篮球记分板",
-"空氣喇叭": "空气喇叭"
+"空氣喇叭": "空气喇叭",
+"喜歡這個記分板？請我喝杯咖啡": "喜欢这个记分板？请我喝杯咖啡"
 };
 /* words that differ by sport, e.g. a volleyball 局 is a set */
 window.I18N_SPORT = {};

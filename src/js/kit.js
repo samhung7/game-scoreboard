@@ -72,25 +72,26 @@ const Kit = (() => {
         lfo.start(s0); lfo.stop(s1 + 0.02);
       });
     },
-    airhorn() { // DJ air horn, the "bap bap bap baaaap" blast: stacked detuned saws, overdriven, honky midrange
-      const c = ctx(), t = c.currentTime;
+    airhorn() { // DJ / stadium air horn, one blast (tap again for more): two clashing horns, overdriven and honky
+      const c = ctx(), t = c.currentTime, d = 1.15;
       const drive = c.createWaveShaper(); const curve = new Float32Array(1024);
-      for (let i = 0; i < curve.length; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(x * 3.5); }
+      for (let i = 0; i < curve.length; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(x * 4); }
       drive.curve = curve;
-      const bp = c.createBiquadFilter(); bp.type = "peaking"; bp.frequency.value = 1300; bp.gain.value = 8; bp.Q.value = 1.2;
-      const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4200;
-      const out = c.createGain(); out.gain.value = 0.32; drive.connect(bp).connect(lp).connect(out).connect(master());
-      [[0, 0.13], [0.18, 0.13], [0.36, 0.13], [0.56, 1.05]].forEach(([st, d]) => {
-        const s0 = t + st, s1 = s0 + d, g = c.createGain();
-        g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(0.5, s0 + 0.015); g.gain.setValueAtTime(0.5, s1 - 0.04); g.gain.exponentialRampToValueAtTime(0.0001, s1);
-        g.connect(drive);
-        [[415, 0], [419, 0], [523, 0.5], [311, 0.35]].forEach(([f, lvl0]) => {
-          const o = c.createOscillator(); o.type = "sawtooth";
-          o.frequency.setValueAtTime(f * 0.86, s0); o.frequency.exponentialRampToValueAtTime(f, s0 + 0.035); // the valve snapping open
-          if (d > 0.5) o.frequency.setValueAtTime(f, s1 - 0.2), o.frequency.exponentialRampToValueAtTime(f * 0.94, s1); // air running out
-          const lg = c.createGain(); lg.gain.value = lvl0 || 0.7; o.connect(lg).connect(g); o.start(s0); o.stop(s1 + 0.02);
-        });
+      const honk = c.createBiquadFilter(); honk.type = "peaking"; honk.frequency.value = 1500; honk.gain.value = 9; honk.Q.value = 1.1;
+      const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5000;
+      const hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 180;
+      const out = c.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.26, t + 0.012);
+      out.gain.setValueAtTime(0.26, t + d * 0.55); out.gain.exponentialRampToValueAtTime(0.14, t + d - 0.12); out.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      drive.connect(hp).connect(honk).connect(lp).connect(out).connect(master());
+      const pre = c.createGain(); pre.gain.value = 0.55; pre.connect(drive);
+      [[466, 0.8], [471, 0.6], [370, 0.55], [233, 0.3]].forEach(([f, lvl]) => {
+        const o = c.createOscillator(); o.type = "sawtooth";
+        o.frequency.setValueAtTime(f * 0.82, t); o.frequency.exponentialRampToValueAtTime(f * 1.01, t + 0.05); o.frequency.exponentialRampToValueAtTime(f, t + 0.15); // valve snaps open
+        o.frequency.setValueAtTime(f, t + d - 0.25); o.frequency.exponentialRampToValueAtTime(f * 0.93, t + d); // air running out
+        const g = c.createGain(); g.gain.value = lvl; o.connect(g).connect(pre); o.start(t); o.stop(t + d + 0.02);
       });
+      const air = c.createBufferSource(); air.buffer = noiseBuf(c, d); const ab = c.createBiquadFilter(); ab.type = "bandpass"; ab.frequency.value = 2500; ab.Q.value = 0.8;
+      const ag = c.createGain(); ag.gain.value = 0.08; air.connect(ab).connect(ag).connect(out); air.start(t);
     },
     sadhorn() {
       const c = ctx(), t = c.currentTime;
@@ -410,6 +411,15 @@ const Kit = (() => {
     if (on) { try { navigator.wakeLock?.request("screen").then((w) => (wake = w)).catch(() => {}); } catch (e) {} }
     else { try { wake?.release(); } catch (e) {} wake = null; }
   }
+  /* ---------- donate: a link in the settings sheet and under the final score, shown once donateUrl is set in config.js ---------- */
+  const donateUrl = (window.SCOREBOARD_CONFIG || {}).donateUrl;
+  if (donateUrl) {
+    const link = (cls) => { const a = document.createElement("a"); a.className = "donate " + cls; a.href = donateUrl; a.target = "_blank"; a.rel = "noopener";
+      a.innerHTML = `<span aria-hidden="true">☕</span> 喜歡這個記分板？請我喝杯咖啡`; return a; };
+    document.querySelector("#setOv .sheet")?.appendChild(link("inset"));
+    document.querySelector("#resOv .sheet.result")?.appendChild(link("quiet"));
+  }
+
   function fullscreen() { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()?.catch(() => {}); } catch (e) {} }
 
   return { ctx, SFX, play, Music, pads, reel, keepAwake, fullscreen, haptic, confirm: confirmBox };

@@ -397,7 +397,8 @@ window.I18N_DICT = {
 "次": "회",
 "分鐘": "분",
 "籃球記分板": "농구 스코어보드",
-"空氣喇叭": "에어혼"
+"空氣喇叭": "에어혼",
+"喜歡這個記分板？請我喝杯咖啡": "스코어보드가 마음에 드셨나요? 커피 한 잔 사 주세요"
 };
 /* words that differ by sport, e.g. a volleyball 局 is a set */
 window.I18N_SPORT = {

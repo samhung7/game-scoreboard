@@ -72,6 +72,26 @@ const Kit = (() => {
         lfo.start(s0); lfo.stop(s1 + 0.02);
       });
     },
+    airhorn() { // DJ air horn, the "bap bap bap baaaap" blast: stacked detuned saws, overdriven, honky midrange
+      const c = ctx(), t = c.currentTime;
+      const drive = c.createWaveShaper(); const curve = new Float32Array(1024);
+      for (let i = 0; i < curve.length; i++) { const x = i / 512 - 1; curve[i] = Math.tanh(x * 3.5); }
+      drive.curve = curve;
+      const bp = c.createBiquadFilter(); bp.type = "peaking"; bp.frequency.value = 1300; bp.gain.value = 8; bp.Q.value = 1.2;
+      const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 4200;
+      const out = c.createGain(); out.gain.value = 0.32; drive.connect(bp).connect(lp).connect(out).connect(master());
+      [[0, 0.13], [0.18, 0.13], [0.36, 0.13], [0.56, 1.05]].forEach(([st, d]) => {
+        const s0 = t + st, s1 = s0 + d, g = c.createGain();
+        g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(0.5, s0 + 0.015); g.gain.setValueAtTime(0.5, s1 - 0.04); g.gain.exponentialRampToValueAtTime(0.0001, s1);
+        g.connect(drive);
+        [[415, 0], [419, 0], [523, 0.5], [311, 0.35]].forEach(([f, lvl0]) => {
+          const o = c.createOscillator(); o.type = "sawtooth";
+          o.frequency.setValueAtTime(f * 0.86, s0); o.frequency.exponentialRampToValueAtTime(f, s0 + 0.035); // the valve snapping open
+          if (d > 0.5) o.frequency.setValueAtTime(f, s1 - 0.2), o.frequency.exponentialRampToValueAtTime(f * 0.94, s1); // air running out
+          const lg = c.createGain(); lg.gain.value = lvl0 || 0.7; o.connect(lg).connect(g); o.start(s0); o.stop(s1 + 0.02);
+        });
+      });
+    },
     sadhorn() {
       const c = ctx(), t = c.currentTime;
       [[293, 0], [277, 0.45], [261, 0.9], [247, 1.35]].forEach(([f, st], i) => {
@@ -257,12 +277,12 @@ const Kit = (() => {
   // [key, icon, label]
   const WHISTLE = '<span class="svgico"><svg viewBox="0 0 32 32" width="1em" height="1em"><defs><linearGradient id="whG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f5fb"/><stop offset="1" stop-color="#8d9bb3"/></linearGradient></defs><path d="M6 8.5C3 5 1.5 3.5 1.5 2" fill="none" stroke="#f87575" stroke-width="2" stroke-linecap="round"/><circle cx="7.2" cy="10" r="2.6" fill="none" stroke="#c4cddc" stroke-width="1.6"/><rect x="11" y="9" width="19.5" height="8" rx="2" fill="url(#whG)" stroke="#4d5b75" stroke-width="1.2"/><circle cx="12" cy="20" r="9.5" fill="url(#whG)" stroke="#4d5b75" stroke-width="1.2"/><rect x="14" y="10.2" width="10" height="5.6" fill="url(#whG)"/><circle cx="12" cy="20" r="4.4" fill="#5c95ff" opacity=".85"/><rect x="17" y="8.2" width="4.5" height="2.6" rx=".8" fill="#2b3550"/></svg></span>'; // there is no whistle emoji, so this one is drawn
   const PAD_SETS = {
-    basketball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["brick", "🧱", "打鐵"], ["coin", "🪙", "金幣"], ["swish", "🏀", "空心"], ["defense", "🥁", "防守"], ["buzzer", "🚨", "蜂鳴器"]],
-    badminton: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
-    volleyball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "扣殺"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
-    tennis: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "🎾", "Ace"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
-    pickleball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["ping", "🥒", "砰"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
-    tabletennis: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["ping", "🏓", "乒乓"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["buzzer", "🚨", "蜂鳴器"]],
+    basketball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["brick", "🧱", "打鐵"], ["coin", "🪙", "金幣"], ["swish", "🏀", "空心"], ["defense", "🥁", "防守"], ["buzzer", "🚨", "蜂鳴器"]],
+    badminton: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    volleyball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "扣殺"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    tennis: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "🎾", "Ace"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    pickleball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["ping", "🥒", "砰"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    tabletennis: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["ping", "🏓", "乒乓"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["buzzer", "🚨", "蜂鳴器"]],
   };
   function pads(el, set) {
     const list = PAD_SETS[set];

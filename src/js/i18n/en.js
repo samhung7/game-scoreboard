@@ -396,7 +396,8 @@ window.I18N_DICT = {
 "秒": "sec",
 "次": "times",
 "分鐘": "min",
-"籃球記分板": "Basketball Scoreboard"
+"籃球記分板": "Basketball Scoreboard",
+"空氣喇叭": "Air horn"
 };
 /* words that differ by sport, e.g. a volleyball 局 is a set */
 window.I18N_SPORT = {

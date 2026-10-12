@@ -7,12 +7,17 @@ const I18N = (() => {
   const LANGS = [["zh-Hant", "繁體中文"], ["zh-Hans", "简体中文"], ["en", "English"], ["ja", "日本語"], ["ko", "한국어"]];
   const SEPS = { "zh-Hans": null, ja: { "，": "、", "、": "、", "。": "。", "：": "：" }, default: { "，": ", ", "、": ", ", "。": ". ", "：": ": " } };
   const CJK = /[㐀-鿿]/;
-  const lang = (() => { try { const l = localStorage.getItem(KEY); if (l) return l; } catch (e) {} return detect(); })();
+  const saved = (() => { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
+  const lang = saved || detect(); // nothing picked = follow the device
+  // the device's language list in order of preference (navigator.languages); the first one we have wins
   function detect() {
-    const n = (navigator.language || "zh-TW").toLowerCase();
-    if (n.startsWith("zh")) return /cn|sg|hans/.test(n) ? "zh-Hans" : "zh-Hant";
-    if (n.startsWith("ja")) return "ja";
-    if (n.startsWith("ko")) return "ko";
+    for (const raw of navigator.languages?.length ? navigator.languages : [navigator.language || "zh-TW"]) {
+      const n = raw.toLowerCase();
+      if (n.startsWith("zh")) return /cn|sg|hans/.test(n) ? "zh-Hans" : "zh-Hant";
+      if (n.startsWith("ja")) return "ja";
+      if (n.startsWith("ko")) return "ko";
+      if (n.startsWith("en")) return "en";
+    }
     return "en";
   }
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "");
@@ -99,12 +104,13 @@ const I18N = (() => {
   }
 
   /* ---------- the language picker, at the top of every settings sheet ---------- */
+  const AUTO = { "zh-Hant": "跟隨系統（繁體中文）", "zh-Hans": "跟随系统（简体中文）", en: "System (English)", ja: "システム（日本語）", ko: "시스템 (한국어)" };
   function addPicker() {
     document.querySelectorAll("#setOv .sheet > h2").forEach((h2) => {
       const row = document.createElement("div"); row.className = "row"; row.dataset.notr = "";
-      row.innerHTML = `<label for="langSel">🌐 Language<small>語言 · 语言 · 言語 · 언어</small></label><select id="langSel" class="langsel">${LANGS.map(([v, l]) => `<option value="${v}"${v === lang ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+      row.innerHTML = `<label for="langSel">🌐 Language<small>語言 · 语言 · 言語 · 언어</small></label><select id="langSel" class="langsel"><option value="">${AUTO[detect()]}</option>${LANGS.map(([v, l]) => `<option value="${v}"${v === saved ? " selected" : ""}>${l}</option>`).join("")}</select>`;
       h2.after(row);
-      row.querySelector("select").addEventListener("change", (e) => { try { localStorage.setItem(KEY, e.target.value); } catch (err) {} location.reload(); });
+      row.querySelector("select").addEventListener("change", (e) => { try { e.target.value ? localStorage.setItem(KEY, e.target.value) : localStorage.removeItem(KEY); } catch (err) {} location.reload(); });
     });
   }
   document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", addPicker) : addPicker();

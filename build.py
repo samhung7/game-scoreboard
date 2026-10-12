@@ -1,7 +1,10 @@
 """Builds the site from src/.
 
-src/<page>.html are page bodies; they pull shared code in with
-  /*@include shared/x.css*/   //@include shared/x.js   <!--@include shared/x.html-->
+src/
+  index.html, badminton.html   page markup (body only; the build adds <head> and the PWA hooks)
+  css/                         base.css (shared look) + one stylesheet per page
+  js/                          kit.js (sounds, DJ pads, music, score reel) + one script per page
+  partials/                    HTML shared by several pages, pulled in with <!--@include partials/x.html-->
 Outputs:
   site/     the installable PWA (full HTML pages + manifest, service worker, icons, sounds) -> GitHub Pages
   preview/  the same pages for the claude.ai preview (index.html is a body fragment there)
@@ -10,11 +13,11 @@ import pathlib, re, shutil
 
 root = pathlib.Path(__file__).parent
 src = root / "src"
-PAGES = {"index.html": "basketball.html", "badminton.html": "badminton.html"}
-INCLUDE = re.compile(r"/\*@include (\S+)\*/|//@include (\S+)|<!--@include (\S+)-->")
+PAGES = ["index.html", "badminton.html"]
+INCLUDE = re.compile(r"<!--@include (\S+)-->")
 
 def expand(text):
-    return INCLUDE.sub(lambda m: (src / next(g for g in m.groups() if g)).read_text(), text)
+    return INCLUDE.sub(lambda m: (src / m.group(1)).read_text(), text)
 
 HEAD = """<!doctype html>
 <html lang="zh-Hant">
@@ -46,8 +49,11 @@ def build():
     for d in (site, preview):
         shutil.rmtree(d, ignore_errors=True); d.mkdir()
     shutil.copytree(root / "static", site, dirs_exist_ok=True)
-    for out, page in PAGES.items():
-        body = expand((src / page).read_text())
+    for d in (site, preview):
+        for sub in ("css", "js"):
+            shutil.copytree(src / sub, d / sub)
+    for out in PAGES:
+        body = expand((src / out).read_text())
         full = HEAD + body + TAIL
         (site / out).write_text(full)
         (preview / out).write_text(body if out == "index.html" else full)

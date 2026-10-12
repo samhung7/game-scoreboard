@@ -8,7 +8,18 @@ Phone- and tablet-friendly scoreboards with a built-in DJ panel. Add it to the h
 
 ## Develop
 
-Pages live in `src/` and share code from `src/shared/`. Build the site:
+```
+src/
+  index.html, badminton.html   page markup
+  css/base.css                 shared look (palette, buttons, sheets, score reel, DJ strip)
+  css/basketball.css, css/badminton.css
+  js/kit.js                    shared sounds, DJ pads, music player, score reel, wake lock
+  js/basketball.js, js/badminton.js
+  partials/music.html          music sheet markup used by both pages
+static/                        manifest, service worker, icons, sounds
+```
+
+`build.py` adds the `<head>` (PWA tags) around each page, pulls in partials and copies everything to `site/`:
 
 ```sh
 python3 build.py        # writes site/ (and preview/)

@@ -1,0 +1,48 @@
+/* Badminton layout: match panel on top (games won, game number, match time), two player columns below. Sides swap on change of ends. */
+.center { display: grid; justify-items: center; gap: 6px; }
+.games {
+  display: flex; flex-direction: column; align-items: center; padding: 6px 26px 8px; border-radius: 14px; background: #000; border: 2px solid var(--line);
+}
+.games .gs { display: flex; align-items: center; gap: 14px; font: 900 clamp(40px, 10vmin, 96px)/1 var(--f-score); font-variant-numeric: tabular-nums; }
+.games .gs .ga { color: var(--home); } .games .gs .gb { color: var(--away); } .games .gs .sep { color: var(--muted); font-size: .5em; }
+.games .sub { font-size: 12px; color: var(--muted); letter-spacing: .12em; }
+.games .sub .per { color: var(--blush); font-weight: 700; }
+.history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font: 14px var(--f-clock); color: var(--muted); }
+.history:empty { display: none; }
+.history span { padding: 1px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+.ctl { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 0; }
+.board.swapped .teams .away { order: -1; }
+.team { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; min-height: 0; min-width: 0; }
+.stats { position: absolute; top: 10px; left: 10px; z-index: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; pointer-events: none; }
+.serve { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--tc); color: var(--ink); font-weight: 700; }
+.team.away .serve { color: var(--ink); }
+.serve svg { width: 16px; height: 16px; }
+.court { color: var(--fg); font-weight: 700; text-shadow: 0 1px 2px var(--ink); }
+.pts { grid-template-columns: 3fr 1fr; }
+.pts button.plus { min-height: 60px; }
+.pts button.minus { min-height: 60px; }
+
+/* rest countdown */
+.rest .clock { font: clamp(64px, 18vmin, 140px)/1 var(--f-clock); color: var(--fg); font-variant-numeric: tabular-nums; }
+.rest .clock.warn { color: var(--coral); }
+
+@media (max-width: 520px) { .games { padding-inline: 16px; } .pts button.plus, .pts button.minus { min-height: 52px; } .score .lead { top: auto; bottom: 14px; } }
+.board { display: contents; }
+@media (orientation: landscape) and (max-height: 540px) {
+  .app { grid-template-rows: auto 1fr auto; gap: 6px; }
+  .board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; min-height: 0; }
+  .teams { display: contents; }
+  .home { order: 1; } .center { order: 2; align-content: center; } .away { order: 3; }
+  .board.swapped .home { order: 3; } .board.swapped .away { order: 1; }
+  .team { grid-template-columns: 1fr auto; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "name name" "score pts"; gap: 6px; }
+  .team .name { grid-area: name; padding: 0; font-size: 16px; }
+  .score { grid-area: score; min-height: 72px; }
+  .score .lead, .score .hint { display: none; }
+  .pts { grid-area: pts; grid-template-columns: auto; grid-template-rows: 3fr 1fr; gap: 4px; min-height: 0; }
+  .pts button.plus, .pts button.minus { min-height: 0; padding: 0 12px; font-size: 18px; }
+  .games .gs { font-size: clamp(30px, 12vh, 64px); }
+  .ctl { flex-direction: column; }
+  .ctl .btn { min-height: 34px; }
+}

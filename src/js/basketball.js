@@ -1,210 +1,3 @@
-<title>球場記分板</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Noto+Sans+TC:wght@400;700&family=Share+Tech+Mono&display=swap">
-<style>
-/*@include shared/base.css*/
-
-/* Basketball layout: clocks centered on top, two team columns below, DJ strip at the bottom. */
-.clocks { display: grid; justify-items: center; gap: 6px; }
-.shot {
-  min-width: 5.2ch; padding: 2px 14px; border-radius: 10px; background: #000; border: 2px solid var(--line);
-  font-family: var(--f-clock); font-size: clamp(30px, 7vmin, 64px); line-height: 1.1; color: var(--shot); text-align: center;
-  font-variant-numeric: tabular-nums; text-shadow: 0 0 12px color-mix(in srgb, var(--shot) 60%, transparent);
-}
-.shot.off { color: var(--muted); text-shadow: none; }
-.shot.idle { opacity: .6; }
-.game {
-  display: flex; flex-direction: column; align-items: center; padding: 4px 26px 6px; border-radius: 14px; background: #000; border: 2px solid var(--line);
-  min-width: 7ch;
-}
-.game .t { font-family: var(--f-clock); font-size: clamp(44px, 12vmin, 112px); line-height: 1.05; color: var(--led); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px color-mix(in srgb, var(--sky) 70%, transparent); }
-.game .t.target { font-family: var(--f-score); font-weight: 900; letter-spacing: .02em; }
-.game .sub { font-size: 12px; color: var(--muted); letter-spacing: .12em; }
-.game .per { color: var(--blush); font-weight: 700; }
-.game.paused .t { opacity: .55; }
-.clockctl { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.btn.shotbtn { color: var(--shot); font-family: var(--f-clock); font-size: 18px; }
-.btn.shotbtn.running { border-color: var(--shot); }
-
-.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 0; }
-.team { display: grid; grid-template-rows: auto auto 1fr auto; gap: 8px; min-height: 0; min-width: 0; }
-.stats { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
-.fouls, .tos { display: inline-flex; align-items: center; gap: 6px; }
-.fouls .fn { font: 900 22px var(--f-score); color: var(--fg); min-width: 1.4ch; text-align: center; font-variant-numeric: tabular-nums; }
-.mini { width: 30px; height: 30px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); font-weight: 700; display: grid; place-items: center; }
-.bonus { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--coral); color: var(--ink); letter-spacing: .06em; }
-.dots { display: inline-flex; gap: 5px; }
-.dot { width: 18px; height: 18px; border-radius: 50%; background: var(--tc); border: 2px solid var(--tc); }
-.dot.used { background: transparent; border-color: var(--line); }
-
-@media (max-width: 520px) {
-  .game { padding-inline: 16px; }
-  .stats { justify-content: center; }
-  .dot { width: 14px; height: 14px; }
-}
-.board { display: contents; }
-/* short landscape phones: put clocks between the teams */
-@media (orientation: landscape) and (max-height: 500px) {
-  .app { grid-template-rows: auto 1fr auto; }
-  .board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; min-height: 0; }
-  .teams { display: contents; }
-  .home { order: 1; } .clocks { order: 2; align-content: center; } .away { order: 3; }
-  .pad { min-height: 52px; }
-  .score .lead { display: none; }
-  .team { gap: 6px; }
-}
-</style>
-
-<div class="app" id="app">
-  <div class="topbar">
-    <nav class="sport" aria-label="切換運動"><a href="./" aria-current="page">籃球</a><a href="badminton.html">羽球</a></nav>
-    <span class="chip" id="modeChip" style="flex:0 0 auto"><strong>5v5</strong></span>
-    <span class="chip" id="ruleChip">4 節 × 10 分</span>
-    <span class="spacer"></span>
-    <button class="iconbtn" id="fsBtn" aria-label="全螢幕"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-    <button class="iconbtn" id="helpBtn" aria-label="操作說明"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
-    <button class="iconbtn" id="setBtn" aria-label="比賽設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
-  </div>
-
-  <div class="board">
-    <div class="clocks" id="clocks">
-      <button class="shot" id="shot" aria-label="進攻時間">24</button>
-      <button class="game paused" id="game" aria-label="比賽時間，點一下開始或暫停">
-        <span class="t" id="gameT">10:00</span>
-        <span class="sub" id="gameSub"><span class="per" id="perLabel">第 1 節</span> · <span id="gameHint">點一下開始</span></span>
-      </button>
-      <div class="clockctl">
-        <button class="btn primary" id="runBtn">▶ 開始</button>
-        <button class="btn shotbtn" id="shotRun" hidden>▶</button>
-        <button class="btn shotbtn" id="shotFull">24</button>
-        <button class="btn shotbtn" id="shotShort">14</button>
-      </div>
-    </div>
-
-    <div class="teams">
-      <section class="team home" data-team="home"></section>
-      <section class="team away" data-team="away"></section>
-    </div>
-  </div>
-
-  <div class="dj">
-    <div class="djlabel">DJ</div>
-    <div class="pads" id="pads"></div>
-  </div>
-</div>
-
-<template id="teamTpl">
-  <input class="name" maxlength="12">
-  <div class="stats">
-    <span class="fouls"><span>犯規</span><button class="mini" data-act="foul-">−</button><span class="fn">0</span><button class="mini" data-act="foul+">+</button><span class="bonus" hidden>加罰</span></span>
-    <span class="tos"><span>暫停</span><span class="dots"></span></span>
-  </div>
-  <div class="score" role="spinbutton" aria-valuemin="0" aria-valuemax="200" tabindex="0">
-    <span class="lead"></span>
-    <div class="reel"></div>
-    <span class="hint" aria-hidden="true"><span>▲</span><span>▼</span></span>
-  </div>
-  <div class="pts"></div>
-</template>
-
-<!-- settings -->
-<div class="overlay" id="setOv" hidden>
-  <div class="sheet" role="dialog" aria-labelledby="setTitle">
-    <h2 id="setTitle">比賽設定</h2>
-    <div class="row"><label>賽制<small>切換會套用該賽制的預設值，之後每項都能再改</small></label>
-      <div class="seg" id="modeSeg"><button data-v="5v5">5v5</button><button data-v="3v3">3v3</button></div></div>
-
-    <h3>比賽時間</h3>
-    <div class="row"><label>大錶<small>每節時間，到 0 就換節</small></label>
-      <div class="inline"><input class="num" id="gMin" type="number" min="1" max="60" inputmode="numeric"> 分 <button class="switch" id="gOn" role="switch" aria-label="啟用大錶"></button></div></div>
-    <div class="row"><label>節數<small>3v3 通常 1 節</small></label>
-      <div class="inline"><input class="num" id="periods" type="number" min="1" max="8" inputmode="numeric"> 節</div></div>
-    <div class="row"><label>延長賽<small>最後一節打完平手就進延長；填 0 代表先得 2 分獲勝（3v3 規則）</small></label>
-      <div class="inline"><input class="num" id="otMin" type="number" min="0" max="20" inputmode="numeric"> 分</div></div>
-    <div class="row"><label>目標得分<small>任一隊達到即結束比賽</small></label>
-      <div class="inline"><input class="num" id="tPts" type="number" min="1" max="200" inputmode="numeric"> 分 <button class="switch" id="tOn" role="switch" aria-label="啟用目標得分"></button></div></div>
-
-    <h3>進攻時間</h3>
-    <div class="row"><label>進攻時間<small>關閉時顯示 ∞</small></label>
-      <div class="inline"><input class="num" id="sSec" type="number" min="5" max="60" inputmode="numeric"> 秒 <button class="switch" id="sOn" role="switch" aria-label="啟用進攻時間"></button></div></div>
-    <div class="row"><label>短重設<small>例如前場界外 14 秒</small></label>
-      <div class="inline"><input class="num" id="sShort" type="number" min="1" max="60" inputmode="numeric"> 秒</div></div>
-    <div class="row"><label>跟大錶一起走<small>關掉後進攻時間有自己的開始 / 暫停鍵</small></label>
-      <button class="switch" id="sLinked" role="switch" aria-label="進攻時間跟大錶連動"></button></div>
-
-    <h3>犯規與暫停</h3>
-    <div class="row"><label>全隊犯規加罰<small>本節犯規達到這個數字顯示「加罰」，每節歸零</small></label>
-      <div class="inline"><input class="num" id="foulBonus" type="number" min="1" max="20" inputmode="numeric"> 次</div></div>
-    <div class="row"><label>每隊暫停<small>整場可用次數</small></label>
-      <div class="inline"><input class="num" id="timeouts" type="number" min="0" max="8" inputmode="numeric"> 次</div></div>
-
-    <div class="hr"></div>
-    <p id="setWarn" hidden style="color: var(--coral)">大錶和目標得分至少要開一個，比賽才有結束條件。</p>
-    <div class="actions">
-      <button class="btn danger" id="newGame">開新比賽</button>
-      <button class="btn primary" id="setDone">套用</button>
-    </div>
-  </div>
-</div>
-
-<!-- confirm new game -->
-<div class="overlay" id="confirmOv" hidden>
-  <div class="sheet">
-    <h2>清除比分重新開始？</h2>
-    <p>雙方分數、犯規、暫停歸零，時間回到第 1 節。隊名和設定會保留。</p>
-    <div class="actions"><button class="btn" id="cNo">取消</button><button class="btn danger" id="cYes">重新開始</button></div>
-  </div>
-</div>
-
-<!-- period break / overtime -->
-<div class="overlay" id="brkOv" hidden>
-  <div class="sheet result">
-    <span class="tag" id="brkTag">第 1 節結束</span>
-    <div class="winner" id="brkTitle">第 2 節</div>
-    <div class="final"><span class="h" id="brkH">0</span><span class="dash">:</span><span class="a" id="brkA">0</span></div>
-    <p id="brkDetail"></p>
-    <div class="actions"><button class="btn" id="brkBack">回到記分板修正</button><button class="btn primary" id="brkGo">開始下一節</button></div>
-  </div>
-</div>
-
-<!-- result -->
-<div class="overlay" id="resOv" hidden>
-  <div class="sheet result">
-    <span class="tag" id="resWhy">時間到</span>
-    <div class="winner" id="resWinner">主隊 獲勝</div>
-    <div class="final"><span class="h" id="resH">0</span><span class="dash">:</span><span class="a" id="resA">0</span></div>
-    <p id="resDetail"></p>
-    <div class="actions"><button class="btn" id="resBack">回到記分板修正</button><button class="btn primary" id="resNew">再來一場</button></div>
-  </div>
-</div>
-
-<!--@include shared/music.html-->
-
-<!-- help -->
-<div class="overlay" id="keyOv" hidden>
-  <div class="sheet">
-    <h2>操作說明</h2>
-    <p>比分大數字可以上下滑動調整：往下滑加分、往上滑扣分，最小 0、最大 200。</p>
-    <div class="keys">
-      <kbd>空白鍵</kbd><span>大錶 開始 / 暫停</span>
-      <kbd>S</kbd><span>進攻時間 開始 / 暫停（不連動時）</span>
-      <kbd>R</kbd><span>進攻時間重設（完整）</span>
-      <kbd>T</kbd><span>進攻時間重設（短）</span>
-      <kbd>Q W E</kbd><span>主隊 +1 +2 +3（加 Shift 為扣分）</span>
-      <kbd>I O P</kbd><span>客隊 +1 +2 +3（加 Shift 為扣分）</span>
-      <kbd>A / L</kbd><span>主隊 / 客隊 犯規 +1</span>
-      <kbd>1 – 8</kbd><span>DJ 音效</span>
-      <kbd>M</kbd><span>音樂 播放 / 暫停</span>
-    </div>
-    <div class="actions"><button class="btn" id="keyClose">關閉</button></div>
-  </div>
-</div>
-
-<script>
-//@include shared/kit.js
-</script>
-<script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const KEY = "court-scoreboard-v2";
@@ -394,12 +187,14 @@
     $("shot").setAttribute("aria-label", indep ? "進攻時間，點一下開始或暫停" : "進攻時間，點一下重設");
     $("shotFull").textContent = S.cfg.sSec; $("shotShort").textContent = S.cfg.sShort;
     $("shotFull").hidden = !S.cfg.sOn; $("shotShort").hidden = !S.cfg.sOn || S.cfg.sShort === S.cfg.sSec;
-    $("modeChip").innerHTML = `<strong>${S.mode}</strong>`;
+    $("modeChip").querySelector("strong").textContent = S.mode;
+    $("modeChip").setAttribute("aria-label", `賽制 ${S.mode}，點一下切換成 ${otherMode()}`);
     const c = S.cfg, bits = [];
     if (c.gOn) bits.push(c.periods > 1 ? `${c.periods} 節 × ${c.gMin} 分` : `${c.gMin} 分鐘`);
-    if (c.tOn) bits.push(`搶 ${c.tPts}`);
     bits.push(c.sOn ? `進攻 ${c.sSec} 秒` : "不計進攻時間");
     $("ruleChip").textContent = bits.join(" · ");
+    $("targetChip").querySelector("strong").textContent = c.tOn ? `搶 ${c.tPts}` : "未設定";
+    $("game").setAttribute("aria-label", clockActive() ? "比賽時間，點一下開始或暫停" : "目標得分，點一下修改");
   }
 
   /* ---------- settings sheet ---------- */
@@ -418,15 +213,52 @@
   NUMS.forEach(([k, lo, hi]) => $(k).addEventListener("change", () => { const n = Math.round(+$(k).value); draft[k] = Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : lo)); fillSettings(); }));
   $("setDone").addEventListener("click", () => {
     if (!draft.gOn && !draft.tOn) { $("setWarn").hidden = false; return; }
-    const { mode, ...cfg } = draft; cfg.pts = PRESETS[mode].pts;
+    const { mode, ...cfg } = draft;
+    applyCfg(mode, cfg); $("setOv").hidden = true;
+  });
+  function applyCfg(mode, cfg) {
+    cfg.pts = PRESETS[mode].pts;
     const old = S.cfg;
     if ((cfg.gMin !== old.gMin || cfg.gOn !== old.gOn) && S.ot === 0) S.gameMs = cfg.gMin * 60000;
     if (cfg.sSec !== old.sSec || cfg.sOn !== old.sOn) S.shotMs = cfg.sSec * 1000;
     S.period = Math.min(S.period, cfg.periods);
     S.toUsed = { home: Math.min(S.toUsed.home, cfg.timeouts), away: Math.min(S.toUsed.away, cfg.timeouts) };
     S.mode = mode; S.cfg = cfg;
-    save(); buildPts(); render(); $("setOv").hidden = true;
+    save(); buildPts(); render();
+  }
+
+  /* ---------- quick switches on the board: tap 5v5 to flip the format, tap the target to change it ---------- */
+  const otherMode = () => (S.mode === "5v5" ? "3v3" : "5v5");
+  $("modeChip").addEventListener("click", () => {
+    setRunning(false); setShotRunning(false);
+    const mode = otherMode(); applyCfg(mode, { ...PRESETS[mode] });
+    toast(`已切換成 ${mode}：${mode === "3v3" ? "+1 / +2、進攻 12 秒、搶 21" : "+1 / +2 / +3、4 節、進攻 24 秒"}`);
   });
+  let tDraft;
+  function openTarget() {
+    tDraft = { tOn: S.cfg.tOn || !S.cfg.gOn, tPts: S.cfg.tPts }; fillTarget(); $("tgtOv").hidden = false;
+  }
+  function fillTarget() {
+    $("tgtN").value = tDraft.tPts; $("tgtOn").setAttribute("aria-checked", String(tDraft.tOn));
+    $("tgtOn").disabled = !S.cfg.gOn; // without a game clock the target is the only way the game ends
+    $("tgtPresets").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.v === tDraft.tPts)));
+  }
+  const setT = (n) => { tDraft.tPts = Math.min(200, Math.max(1, Math.round(n) || 1)); tDraft.tOn = true; fillTarget(); };
+  $("targetChip").addEventListener("click", openTarget);
+  $("tgtMinus").addEventListener("click", () => setT(tDraft.tPts - 1));
+  $("tgtPlus").addEventListener("click", () => setT(tDraft.tPts + 1));
+  $("tgtN").addEventListener("change", () => setT(+$("tgtN").value));
+  $("tgtPresets").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) setT(+v); });
+  $("tgtOn").addEventListener("click", () => { tDraft.tOn = !tDraft.tOn; fillTarget(); });
+  $("tgtCancel").addEventListener("click", () => ($("tgtOv").hidden = true));
+  $("tgtDone").addEventListener("click", () => {
+    applyCfg(S.mode, { ...S.cfg, tOn: tDraft.tOn, tPts: tDraft.tPts }); $("tgtOv").hidden = true;
+    // raising the target past a finished game's score reopens it
+    if (S.over?.why === "target" && Math.max(S.score.home, S.score.away) < S.cfg.tPts) { S.over = null; $("resOv").hidden = true; save(); render(); }
+    else if (!S.over && S.cfg.tOn) TEAMS.forEach((tm) => !S.over && S.score[tm] >= S.cfg.tPts && endGame("target"));
+  });
+  let toastTimer = 0;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2600); }
   $("newGame").addEventListener("click", () => { $("setOv").hidden = true; $("confirmOv").hidden = false; });
   $("cNo").addEventListener("click", () => ($("confirmOv").hidden = true));
   $("cYes").addEventListener("click", () => { $("confirmOv").hidden = true; newGame(); });
@@ -435,13 +267,14 @@
   $("brkGo").addEventListener("click", nextPeriod);
   $("brkBack").addEventListener("click", () => { $("brkOv").hidden = true; });
   $("keyClose").addEventListener("click", () => ($("keyOv").hidden = true));
-  ["setOv", "confirmOv", "keyOv"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target.id === id) $(id).hidden = true; }));
+  ["setOv", "confirmOv", "keyOv", "tgtOv"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target.id === id) $(id).hidden = true; }));
 
   /* ---------- wiring ---------- */
   $("setBtn").addEventListener("click", openSettings);
   $("helpBtn").addEventListener("click", () => ($("keyOv").hidden = false));
+  $("setHelp").addEventListener("click", () => { $("setOv").hidden = true; $("keyOv").hidden = false; });
   $("fsBtn").addEventListener("click", Kit.fullscreen);
-  $("game").addEventListener("click", () => setRunning(!S.running));
+  $("game").addEventListener("click", () => (clockActive() || S.over ? setRunning(!S.running) : openTarget()));
   $("runBtn").addEventListener("click", () => setRunning(!S.running));
   $("shot").addEventListener("click", () => { if (!S.cfg.sOn) return; if (shotFollowsMain()) resetShot(false); else setShotRunning(!S.shotRunning); });
   $("shotRun").addEventListener("click", () => setShotRunning(!S.shotRunning));
@@ -469,4 +302,3 @@
   buildPts(); render();
   if (S.over) showResult(); else if (S.brk) showBreak();
 })();
-</script>

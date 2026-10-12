@@ -272,6 +272,7 @@
 
   /* ---------- wiring ---------- */
   $("setBtn").addEventListener("click", openSettings);
+  $("ruleChip").addEventListener("click", openSettings);
   $("resetScore").addEventListener("click", async () => {
     const ok = await Kit.confirm({ title: "比分歸零？", text: "兩隊比分都會變成 0。時間、節數、犯規和暫停都不變。", ok: "歸零" });
     if (!ok) return;

@@ -27,7 +27,8 @@
   --f-ui: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
   color-scheme: dark;
 }
-html, body { height: 100%; }
+html, body { height: 100%; touch-action: manipulation; }
+* { touch-action: manipulation; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--f-ui);
   margin: 0; overflow: hidden; -webkit-tap-highlight-color: transparent;
@@ -45,7 +46,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .chip strong { color: var(--fg); }
 .chipbtn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font: inherit; font-size: 13px; color: var(--muted); }
 .chipbtn .swap { color: var(--blush); font-size: 12px; }
-.chipbtn:active { background: var(--panel-2); }
+.chipbtn:active, .chip.rulebtn:active { background: var(--panel-2); }
+.chip.rulebtn { cursor: pointer; font: inherit; font-size: 13px; }
 .toast { position: fixed; left: 50%; top: calc(58px + env(safe-area-inset-top, 0px)); translate: -50% 0; z-index: 20; max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); font-size: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
 .stepper { display: flex; gap: 10px; align-items: center; justify-content: center; }
 .stepper .btn { width: 56px; height: 56px; font-size: 26px; }

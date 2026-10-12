@@ -8,8 +8,8 @@
 <div class="app" id="app">
   <div class="topbar">
     <nav class="sport" aria-label="切換運動"><a href="./">籃球</a><a href="badminton.html" aria-current="page">羽球</a></nav>
-    <span class="chip" id="modeChip" style="flex:0 0 auto"><strong>單打</strong></span>
-    <span class="chip" id="ruleChip">3 局 2 勝 · 21 分</span>
+    <button class="chip chipbtn" id="modeChip"><strong>單打</strong><span class="swap" aria-hidden="true">⇄</span></button>
+    <button class="chip rulebtn" id="ruleChip" aria-label="比賽設定">3 局 2 勝 · 21 分</button>
     <span class="spacer"></span>
     <button class="iconbtn" id="fsBtn" aria-label="全螢幕"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     <button class="iconbtn" id="helpBtn" aria-label="操作說明"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
@@ -107,6 +107,8 @@
     <div class="actions"><button class="btn" id="resBack">回到記分板修正</button><button class="btn primary" id="resNew">再來一場</button></div>
   </div>
 </div>
+
+<div class="toast" id="toast" role="status" hidden></div>
 
 <!--@include partials/music.html-->
 

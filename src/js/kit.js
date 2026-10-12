@@ -55,16 +55,9 @@ const Kit = (() => {
       }
       for (let k = 0; k < 2; k++) { const st = t + rnd(0.4, 1.6); const o = tone("sine", 2100, st, 0.5, 0.05, out); o.frequency.exponentialRampToValueAtTime(2900, st + 0.15); o.frequency.exponentialRampToValueAtTime(2300, st + 0.45); }
     },
-    airhorn() {
+    whistle() { // referee pea whistle: one short blast, the pea makes the fast warble
       const c = ctx(), t = c.currentTime;
-      [[0, 0.32], [0.42, 0.9]].forEach(([st, d]) => {
-        const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400; lp.connect(master());
-        [233, 236, 466, 349].forEach((f) => { const o = tone("sawtooth", f, t + st, d, 0.12, lp); o.frequency.setValueAtTime(f * 0.94, t + st); o.frequency.exponentialRampToValueAtTime(f, t + st + 0.06); });
-      });
-    },
-    whistle() { // referee pea whistle: a short tweet then a long blast, the pea makes the fast warble
-      const c = ctx(), t = c.currentTime;
-      [[0, 0.16], [0.26, 0.75]].forEach(([st, d]) => {
+      [[0, 0.3]].forEach(([st, d]) => {
         const s0 = t + st, s1 = s0 + d, out = c.createGain(); out.connect(master());
         out.gain.setValueAtTime(0.0001, s0); out.gain.exponentialRampToValueAtTime(0.32, s0 + 0.025); out.gain.setValueAtTime(0.32, s1 - 0.05); out.gain.exponentialRampToValueAtTime(0.0001, s1);
         const trem = c.createGain(); trem.gain.value = 0.65; trem.connect(out);
@@ -257,7 +250,7 @@ const Kit = (() => {
   const WHISTLE = '<span class="svgico"><svg viewBox="0 0 32 32" width="1em" height="1em"><defs><linearGradient id="whG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1f5fb"/><stop offset="1" stop-color="#8d9bb3"/></linearGradient></defs><path d="M6 8.5C3 5 1.5 3.5 1.5 2" fill="none" stroke="#f87575" stroke-width="2" stroke-linecap="round"/><circle cx="7.2" cy="10" r="2.6" fill="none" stroke="#c4cddc" stroke-width="1.6"/><rect x="11" y="9" width="19.5" height="8" rx="2" fill="url(#whG)" stroke="#4d5b75" stroke-width="1.2"/><circle cx="12" cy="20" r="9.5" fill="url(#whG)" stroke="#4d5b75" stroke-width="1.2"/><rect x="14" y="10.2" width="10" height="5.6" fill="url(#whG)"/><circle cx="12" cy="20" r="4.4" fill="#5c95ff" opacity=".85"/><rect x="17" y="8.2" width="4.5" height="2.6" rx=".8" fill="#2b3550"/></svg></span>'; // there is no whistle emoji, so this one is drawn
   const PAD_SETS = {
     basketball: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["brick", "🧱", "打鐵"], ["coin", "🪙", "金幣"], ["swish", "🏀", "空心"], ["defense", "🥁", "防守"], ["buzzer", "🚨", "蜂鳴器"]],
-    badminton: [["cheer", "🙌", "歡呼"], ["airhorn", "📯", "空氣喇叭"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
+    badminton: [["cheer", "🙌", "歡呼"], ["whistle", WHISTLE, "哨音"], ["sadhorn", "🎺", "嘲諷喇叭"], ["smash", "💥", "殺球"], ["coin", "🪙", "金幣"], ["defense", "🥁", "加油鼓"], ["buzzer", "🚨", "蜂鳴器"]],
   };
   function pads(el, set) {
     const list = PAD_SETS[set];
@@ -348,6 +341,16 @@ const Kit = (() => {
   }
   // every point button on every board
   document.addEventListener("click", (e) => { if (e.target.closest(".pts button")) haptic(); }, true);
+
+  /* ---------- no double-tap zoom: a quick second tap on anything that is not a control is swallowed (iOS ignores touch-action there) ---------- */
+  let lastTouch = 0;
+  document.addEventListener("touchend", (e) => {
+    const now = e.timeStamp;
+    if (now - lastTouch < 350 && !e.target.closest("button, a, input, select, textarea, label, .score")) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+  document.addEventListener("dblclick", (e) => e.preventDefault(), { passive: false });
+  ["gesturestart", "gesturechange"].forEach((ev) => document.addEventListener(ev, (e) => e.preventDefault(), { passive: false })); // pinch zoom on iOS
 
   /* ---------- in-page confirmation (the browser's confirm() is not used) ---------- */
   function confirmBox({ title, text, ok = "確定", danger = true }) {

@@ -144,7 +144,8 @@
     $("gameNo").textContent = S.over ? "比賽結束" : deciding() && S.cfg.best > 1 ? `第 ${S.games.length + 1} 局（決勝局）` : `第 ${S.games.length + 1} 局`;
     $("hist").innerHTML = S.games.map((g, i) => `<span>G${i + 1} ${g.a}-${g.b}</span>`).join("");
     $("undoBtn").disabled = !S.undo.length;
-    $("modeChip").innerHTML = `<strong>${S.cfg.type === "double" ? "雙打" : "單打"}</strong>`;
+    $("modeChip").querySelector("strong").textContent = S.cfg.type === "double" ? "雙打" : "單打";
+    $("modeChip").setAttribute("aria-label", `${S.cfg.type === "double" ? "雙打" : "單打"}，點一下切換成${S.cfg.type === "double" ? "單打" : "雙打"}`);
     $("ruleChip").textContent = `${S.cfg.best === 1 ? "1 局" : `${S.cfg.best} 局 ${need()} 勝`} · ${S.cfg.pts} 分 · 封頂 ${S.cfg.cap}`;
     renderElapsed();
   }
@@ -159,19 +160,30 @@
     $("pts").value = draft.pts; $("cap").value = draft.cap;
     $("rests").setAttribute("aria-checked", String(draft.rests));
   }
-  $("setBtn").addEventListener("click", () => { draft = { ...S.cfg }; fillSettings(); $("setOv").hidden = false; });
+  const openSettings = () => { draft = { ...S.cfg }; fillSettings(); $("setOv").hidden = false; };
+  $("setBtn").addEventListener("click", openSettings);
+  $("ruleChip").addEventListener("click", openSettings);
   $("typeSeg").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) { draft.type = v; fillSettings(); } });
   $("sysSeg").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) { draft = { ...draft, sys: v, ...SYSTEMS[v] }; fillSettings(); } });
   $("bestSeg").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) { draft.best = +v; fillSettings(); } });
   $("rests").addEventListener("click", () => { draft.rests = !draft.rests; fillSettings(); });
   $("pts").addEventListener("change", () => { draft.pts = Math.min(50, Math.max(5, Math.round(+$("pts").value) || 21)); draft.cap = Math.max(draft.cap, draft.pts); fillSettings(); });
   $("cap").addEventListener("change", () => { draft.cap = Math.min(60, Math.max(draft.pts, Math.round(+$("cap").value) || draft.pts)); fillSettings(); });
-  $("setDone").addEventListener("click", () => {
+  // singles <-> doubles: doubles names are "A / C"
+  function applyCfg(cfg) {
     const wasDouble = S.cfg.type === "double";
-    S.cfg = { ...draft };
+    S.cfg = { ...cfg };
     if (S.cfg.type === "double" && !wasDouble) S.names = { a: S.names.a.includes("/") ? S.names.a : "選手 A / 選手 C", b: S.names.b.includes("/") ? S.names.b : "選手 B / 選手 D" };
     if (S.cfg.type === "single" && wasDouble) S.names = { a: S.names.a.split("/")[0].trim() || "選手 A", b: S.names.b.split("/")[0].trim() || "選手 B" };
-    save(); render(); $("setOv").hidden = true;
+    save(); render();
+  }
+  $("setDone").addEventListener("click", () => { applyCfg(draft); $("setOv").hidden = true; });
+  let toastTimer = 0;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2600); }
+  $("modeChip").addEventListener("click", () => {
+    const type = S.cfg.type === "double" ? "single" : "double";
+    applyCfg({ ...S.cfg, type });
+    toast(type === "double" ? "已切換成雙打，點選手名字可以改名" : "已切換成單打");
   });
   $("newGame").addEventListener("click", () => { $("setOv").hidden = true; $("confirmOv").hidden = false; });
   $("cNo").addEventListener("click", () => ($("confirmOv").hidden = true));

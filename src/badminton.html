@@ -1,0 +1,383 @@
+<title>羽球記分板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Noto+Sans+TC:wght@400;700&family=Share+Tech+Mono&display=swap">
+<style>
+/*@include shared/base.css*/
+
+/* Badminton layout: match panel on top (games won, game number, match time), two player columns below. Sides swap on change of ends. */
+.center { display: grid; justify-items: center; gap: 6px; }
+.games {
+  display: flex; flex-direction: column; align-items: center; padding: 6px 26px 8px; border-radius: 14px; background: #000; border: 2px solid var(--line);
+}
+.games .gs { display: flex; align-items: center; gap: 14px; font: 900 clamp(40px, 10vmin, 96px)/1 var(--f-score); font-variant-numeric: tabular-nums; }
+.games .gs .ga { color: var(--home); } .games .gs .gb { color: var(--away); } .games .gs .sep { color: var(--muted); font-size: .5em; }
+.games .sub { font-size: 12px; color: var(--muted); letter-spacing: .12em; }
+.games .sub .per { color: var(--red-500); font-weight: 700; }
+.history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font: 14px var(--f-clock); color: var(--muted); }
+.history:empty { display: none; }
+.history span { padding: 1px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+.ctl { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 0; }
+.board.swapped .teams .away { order: -1; }
+.team { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; min-height: 0; min-width: 0; }
+.stats { position: absolute; top: 10px; left: 10px; z-index: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; pointer-events: none; }
+.serve { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--tc); color: var(--navy-900); font-weight: 700; }
+.team.away .serve { color: var(--navy-900); }
+.serve svg { width: 16px; height: 16px; }
+.court { color: var(--fg); font-weight: 700; text-shadow: 0 1px 2px var(--navy-900); }
+.pts { grid-template-columns: 3fr 1fr; }
+.pts button.plus { min-height: 60px; }
+.pts button.minus { min-height: 60px; }
+
+/* rest countdown */
+.rest .clock { font: clamp(64px, 18vmin, 140px)/1 var(--f-clock); color: var(--white); font-variant-numeric: tabular-nums; }
+.rest .clock.warn { color: var(--red-500); }
+
+@media (max-width: 520px) { .games { padding-inline: 16px; } .pts button.plus, .pts button.minus { min-height: 52px; } .score .lead { top: auto; bottom: 14px; } }
+.board { display: contents; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .app { grid-template-rows: auto 1fr auto; }
+  .board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; min-height: 0; }
+  .teams { display: contents; }
+  .home { order: 1; } .center { order: 2; align-content: center; } .away { order: 3; }
+  .board.swapped .home { order: 3; } .board.swapped .away { order: 1; }
+  .pad { min-height: 52px; }
+  .score .lead { display: none; }
+  .team { gap: 6px; }
+}
+</style>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <nav class="sport" aria-label="切換運動"><a href="./">籃球</a><a href="badminton.html" aria-current="page">羽球</a></nav>
+    <span class="chip" id="modeChip" style="flex:0 0 auto"><strong>單打</strong></span>
+    <span class="chip" id="ruleChip">3 局 2 勝 · 21 分</span>
+    <span class="spacer"></span>
+    <button class="iconbtn" id="fsBtn" aria-label="全螢幕"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="iconbtn" id="helpBtn" aria-label="操作說明"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg></button>
+    <button class="iconbtn" id="setBtn" aria-label="比賽設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+  </div>
+
+  <div class="board" id="board">
+    <div class="center">
+      <div class="games" aria-label="局數">
+        <span class="gs"><span class="ga" id="gA">0</span><span class="sep">局</span><span class="gb" id="gB">0</span></span>
+        <span class="sub"><span class="per" id="gameNo">第 1 局</span> · 比賽時間 <span id="elapsed">0:00</span></span>
+      </div>
+      <div class="history" id="hist"></div>
+      <div class="ctl">
+        <button class="btn" id="undoBtn">↶ 復原</button>
+        <button class="btn" id="swapBtn">⇄ 換場</button>
+        <button class="btn" id="restBtn">⏱ 休息計時</button>
+      </div>
+    </div>
+
+    <div class="teams">
+      <section class="team home" data-side="a"></section>
+      <section class="team away" data-side="b"></section>
+    </div>
+  </div>
+
+  <div class="dj">
+    <div class="djlabel">DJ</div>
+    <div class="pads" id="pads"></div>
+  </div>
+</div>
+
+<template id="teamTpl">
+  <input class="name" maxlength="16">
+  <div class="score" role="spinbutton" aria-valuemin="0" tabindex="0">
+  <div class="stats"><span class="serve" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="17" r="4"/><path d="M8 15 5 4h3l3 9zM16 15l3-11h-3l-3 9zM11 13l-.5-10h3l-.5 10z" opacity=".7"/></svg>發球</span><span class="court"></span></div>
+    <span class="lead"></span>
+    <div class="reel"></div>
+    <span class="hint" aria-hidden="true"><span>▲</span><span>▼</span></span>
+  </div>
+  <div class="pts"><button class="plus">+1 得分</button><button class="minus">−1</button></div>
+</template>
+
+<!-- settings -->
+<div class="overlay" id="setOv" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="setTitle">
+    <h2 id="setTitle">比賽設定</h2>
+    <div class="row"><label>單打 / 雙打<small>雙打兩邊各填兩位選手名字</small></label>
+      <div class="seg" id="typeSeg"><button data-v="single">單打</button><button data-v="double">雙打</button></div></div>
+    <div class="row"><label>計分制<small>21 分是目前通用制；BWF 已通過 15 分制，2027 年 1 月起成為國際賽標準</small></label>
+      <div class="seg" id="sysSeg"><button data-v="21">21 分</button><button data-v="15">15 分</button></div></div>
+    <div class="row"><label>每局分數<small>到這個分數且領先 2 分就贏</small></label>
+      <div class="inline"><input class="num" id="pts" type="number" min="5" max="50" inputmode="numeric"> 分</div></div>
+    <div class="row"><label>封頂<small>打到這個分數直接贏，不用領先 2 分</small></label>
+      <div class="inline"><input class="num" id="cap" type="number" min="5" max="60" inputmode="numeric"> 分</div></div>
+    <div class="row"><label>局數<small>先贏過半的一方獲勝</small></label>
+      <div class="seg" id="bestSeg"><button data-v="1">1 局</button><button data-v="3">3 局 2 勝</button><button data-v="5">5 局 3 勝</button></div></div>
+    <div class="row"><label>休息提醒<small>局中領先方到一半分數休息 60 秒，局間休息 120 秒</small></label>
+      <button class="switch" id="rests" role="switch" aria-label="休息提醒"></button></div>
+    <div class="hr"></div>
+    <div class="actions">
+      <button class="btn danger" id="newGame">開新比賽</button>
+      <button class="btn primary" id="setDone">套用</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOv" hidden>
+  <div class="sheet">
+    <h2>清除比分重新開始？</h2>
+    <p>局數和分數歸零。選手名字和設定會保留。</p>
+    <div class="actions"><button class="btn" id="cNo">取消</button><button class="btn danger" id="cYes">重新開始</button></div>
+  </div>
+</div>
+
+<!-- rest countdown: mid-game interval or between games -->
+<div class="overlay" id="restOv" hidden>
+  <div class="sheet result rest">
+    <span class="tag" id="restTag">局中休息</span>
+    <div class="winner" id="restTitle">休息 60 秒</div>
+    <div class="clock" id="restClock">1:00</div>
+    <p id="restDetail"></p>
+    <div class="actions"><button class="btn" id="restUndo">回到記分板修正</button><button class="btn primary" id="restGo">繼續比賽</button></div>
+  </div>
+</div>
+
+<!-- result -->
+<div class="overlay" id="resOv" hidden>
+  <div class="sheet result">
+    <span class="tag" id="resWhy">比賽結束</span>
+    <div class="winner" id="resWinner">選手 A 獲勝</div>
+    <div class="final"><span class="h" id="resH">0</span><span class="dash">:</span><span class="a" id="resA">0</span></div>
+    <p id="resDetail"></p>
+    <div class="actions"><button class="btn" id="resBack">回到記分板修正</button><button class="btn primary" id="resNew">再來一場</button></div>
+  </div>
+</div>
+
+<!--@include shared/music.html-->
+
+<div class="overlay" id="keyOv" hidden>
+  <div class="sheet">
+    <h2>操作說明</h2>
+    <p>每一球按得分方的「+1 得分」，發球權和發球區會自動跟著換。比分大數字也可以上下滑動調整：往下滑加分、往上滑扣分。按錯就按「復原」。</p>
+    <p>羽球比賽沒有比賽大錶，只有休息時間：領先方先到一半分數（21 分制是 11 分、15 分制是 8 分）時休息 60 秒，局與局之間休息 120 秒。決勝局在這個時候也要換場。</p>
+    <div class="keys">
+      <kbd>Q / P</kbd><span>左邊 / 右邊 得分</span>
+      <kbd>Z</kbd><span>復原上一球</span>
+      <kbd>X</kbd><span>換場</span>
+      <kbd>1 – 7</kbd><span>DJ 音效</span>
+      <kbd>M</kbd><span>音樂 播放 / 暫停</span>
+    </div>
+    <div class="actions"><button class="btn" id="keyClose">關閉</button></div>
+  </div>
+</div>
+
+<script>
+//@include shared/kit.js
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const KEY = "badminton-scoreboard-v1";
+  const SIDES = ["a", "b"];
+  const SYSTEMS = { 21: { pts: 21, cap: 30 }, 15: { pts: 15, cap: 21 } };
+  const fresh = () => ({
+    cfg: { type: "single", sys: "21", pts: 21, cap: 30, best: 3, rests: true },
+    names: { a: "選手 A", b: "選手 B" },
+    score: { a: 0, b: 0 }, games: [], server: "a", swapped: false, midDone: false,
+    undo: [], over: null, rest: null, startTs: 0, endTs: 0,
+  });
+  let S = fresh();
+  try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); S = { ...fresh(), ...o, cfg: { ...fresh().cfg, ...o.cfg } }; } } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const other = (s) => (s === "a" ? "b" : "a");
+  const wins = (s) => S.games.filter((g) => g.w === s).length;
+  const need = () => Math.ceil(S.cfg.best / 2);
+  const deciding = () => S.games.length === S.cfg.best - 1;
+  const mid = () => Math.ceil(S.cfg.pts / 2);
+  const snapshot = () => JSON.stringify({ score: S.score, games: S.games, server: S.server, swapped: S.swapped, midDone: S.midDone, over: S.over });
+
+  const Pads = Kit.pads($("pads"), "badminton");
+
+  /* ---------- players ---------- */
+  const T = {};
+  SIDES.forEach((s) => {
+    const sec = document.querySelector(`.team[data-side="${s}"]`);
+    sec.appendChild($("teamTpl").content.cloneNode(true));
+    const el = { name: sec.querySelector(".name"), serve: sec.querySelector(".serve"), court: sec.querySelector(".court"), score: sec.querySelector(".score"), lead: sec.querySelector(".lead") };
+    T[s] = el;
+    el.name.id = "name-" + s; el.name.setAttribute("aria-label", s === "a" ? "左邊選手名字" : "右邊選手名字");
+    el.score.setAttribute("aria-valuemax", 60);
+    el.score.setAttribute("aria-label", "比分，往下滑加分、往上滑扣分");
+    el.name.addEventListener("input", () => { S.names[s] = el.name.value.trim() || (s === "a" ? "選手 A" : "選手 B"); save(); });
+    sec.querySelector(".plus").addEventListener("click", () => rally(s));
+    sec.querySelector(".minus").addEventListener("click", () => adjust(s, -1));
+    el.reel = Kit.reel({
+      box: el.score, strip: sec.querySelector(".reel"), max: 60,
+      get: () => S.score[s], set: (n) => { S.score[s] = n; renderLead(); }, locked: () => !!S.over || !!S.rest,
+      commit: (base) => { if (S.score[s] !== base) { pushUndo(base, s); afterPoint(s, S.score[s] > base); } else render(); },
+    });
+  });
+
+  /* ---------- scoring ---------- */
+  function pushUndo(base, s) {
+    const snap = JSON.parse(snapshot()); if (base != null) snap.score = { ...snap.score, [s]: base };
+    S.undo.push(JSON.stringify(snap)); if (S.undo.length > 200) S.undo.shift();
+  }
+  function rally(s) {
+    if (S.over || S.rest) return;
+    if (!S.startTs) S.startTs = Date.now();
+    S.undo.push(snapshot()); if (S.undo.length > 200) S.undo.shift();
+    S.score[s] += 1; S.server = s; // rally-point scoring: whoever wins the rally serves next
+    const el = T[s].score; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+    afterPoint(s, true);
+  }
+  function adjust(s, d) {
+    if (S.over || S.rest) return;
+    const n = Math.max(0, S.score[s] + d); if (n === S.score[s]) return;
+    S.undo.push(snapshot()); S.score[s] = n; afterPoint(s, d > 0);
+  }
+  function afterPoint(s, up) {
+    Kit.ctx();
+    if (up) {
+      const me = S.score[s], op = S.score[other(s)];
+      if ((me >= S.cfg.pts && me - op >= 2) || me >= S.cfg.cap) return gameEnd(s);
+      if (!S.midDone && me >= mid() && op < mid()) {
+        S.midDone = true;
+        if (deciding()) S.swapped = !S.swapped; // deciding game: change ends at the interval
+        if (S.cfg.rests) startRest("mid");
+      }
+    }
+    save(); render();
+  }
+  function gameEnd(w) {
+    S.games.push({ a: S.score.a, b: S.score.b, w });
+    if (wins(w) >= need()) { S.over = { w }; S.endTs = Date.now(); save(); render(); showResult(); Kit.play("cheer"); return; }
+    S.score = { a: 0, b: 0 }; S.server = w; S.swapped = !S.swapped; S.midDone = false; // winner serves first, players change ends
+    save(); render();
+    if (S.cfg.rests) startRest("game"); else Kit.play("cheer");
+  }
+  function undo() {
+    const last = S.undo.pop(); if (!last) return;
+    Object.assign(S, JSON.parse(last)); closeRest(); $("resOv").hidden = true; save(); render();
+  }
+
+  /* ---------- rest countdown ---------- */
+  let restTimer = 0;
+  function startRest(kind) {
+    const sec = kind === "game" ? 120 : 60;
+    S.rest = { kind, until: Date.now() + sec * 1000, warned: false }; save();
+    const g = S.games[S.games.length - 1];
+    $("restTag").textContent = kind === "game" ? `第 ${S.games.length} 局結束` : `第 ${S.games.length + 1} 局 局中休息`;
+    $("restTitle").textContent = kind === "game" ? `${S.names[g.w]} 拿下這局 ${Math.max(g.a, g.b)}:${Math.min(g.a, g.b)}` : `休息 ${sec} 秒`;
+    $("restDetail").textContent = kind === "game" ? `局間休息 120 秒，雙方換場，下一局由 ${S.names[g.w]} 先發球。` : deciding() ? "決勝局：雙方換場。" : "雙方可以到場邊喝水、聽教練指導。";
+    $("restOv").hidden = false; Kit.keepAwake(true);
+    if (kind === "game") Kit.play("cheer");
+    clearInterval(restTimer); restTimer = setInterval(tickRest, 200); tickRest();
+  }
+  function tickRest() {
+    if (!S.rest) return;
+    const left = Math.max(0, S.rest.until - Date.now()), s = Math.ceil(left / 1000);
+    const clk = $("restClock"); clk.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; clk.classList.toggle("warn", s <= 20);
+    if (s <= 20 && !S.rest.warned) { S.rest.warned = true; save(); Kit.SFX.beep(); } // the umpire's "20 seconds" call
+    if (left <= 0) { Kit.SFX.buzzer(); closeRest(); save(); render(); }
+  }
+  function closeRest() { clearInterval(restTimer); S.rest = null; $("restOv").hidden = true; Kit.keepAwake(false); }
+
+  /* ---------- end of match ---------- */
+  function showResult() {
+    const w = S.over.w, l = other(w);
+    $("resWinner").textContent = `${S.names[w]} 獲勝`;
+    $("resH").textContent = wins("a"); $("resA").textContent = wins("b");
+    $("resWhy").textContent = `${S.cfg.best === 1 ? "一局定勝負" : `${S.cfg.best} 局 ${need()} 勝`}`;
+    const mins = S.startTs ? Math.round((S.endTs - S.startTs) / 60000) : 0;
+    $("resDetail").textContent = `各局比分 ${S.games.map((g) => `${g[w]}-${g[l]}`).join("、")}${mins ? `，比賽時間約 ${mins} 分鐘` : ""}`;
+    $("resOv").hidden = false;
+  }
+  function newMatch() {
+    const keep = { cfg: S.cfg, names: S.names };
+    closeRest(); S = { ...fresh(), ...keep }; save(); render();
+  }
+
+  /* ---------- render ---------- */
+  const fmtElapsed = (ms) => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`; };
+  function renderElapsed() { $("elapsed").textContent = S.startTs ? fmtElapsed((S.over ? S.endTs : Date.now()) - S.startTs) : "0:00"; }
+  function renderLead() {
+    const d = S.score.a - S.score.b;
+    T.a.lead.textContent = d > 0 ? `領先 ${d}` : ""; T.b.lead.textContent = d < 0 ? `領先 ${-d}` : "";
+  }
+  function render() {
+    $("board").classList.toggle("swapped", S.swapped);
+    SIDES.forEach((s) => {
+      const el = T[s];
+      el.reel.draw();
+      if (document.activeElement !== el.name) el.name.value = S.names[s];
+      const serving = S.server === s && !S.over;
+      el.serve.hidden = !serving;
+      el.court.textContent = serving ? (S.score[s] % 2 === 0 ? "右區" : "左區") : "";
+    });
+    renderLead();
+    $("gA").textContent = wins("a"); $("gB").textContent = wins("b");
+    $("gameNo").textContent = S.over ? "比賽結束" : deciding() && S.cfg.best > 1 ? `第 ${S.games.length + 1} 局（決勝局）` : `第 ${S.games.length + 1} 局`;
+    $("hist").innerHTML = S.games.map((g, i) => `<span>G${i + 1} ${g.a}-${g.b}</span>`).join("");
+    $("undoBtn").disabled = !S.undo.length;
+    $("modeChip").innerHTML = `<strong>${S.cfg.type === "double" ? "雙打" : "單打"}</strong>`;
+    $("ruleChip").textContent = `${S.cfg.best === 1 ? "1 局" : `${S.cfg.best} 局 ${need()} 勝`} · ${S.cfg.pts} 分 · 封頂 ${S.cfg.cap}`;
+    renderElapsed();
+  }
+  setInterval(() => { if (S.startTs && !S.over) renderElapsed(); }, 1000);
+
+  /* ---------- settings ---------- */
+  let draft;
+  function fillSettings() {
+    $("typeSeg").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === draft.type)));
+    $("sysSeg").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(SYSTEMS[b.dataset.v].pts === draft.pts && SYSTEMS[b.dataset.v].cap === draft.cap)));
+    $("bestSeg").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.v === draft.best)));
+    $("pts").value = draft.pts; $("cap").value = draft.cap;
+    $("rests").setAttribute("aria-checked", String(draft.rests));
+  }
+  $("setBtn").addEventListener("click", () => { draft = { ...S.cfg }; fillSettings(); $("setOv").hidden = false; });
+  $("typeSeg").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) { draft.type = v; fillSettings(); } });
+  $("sysSeg").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) { draft = { ...draft, sys: v, ...SYSTEMS[v] }; fillSettings(); } });
+  $("bestSeg").addEventListener("click", (e) => { const v = e.target.dataset?.v; if (v) { draft.best = +v; fillSettings(); } });
+  $("rests").addEventListener("click", () => { draft.rests = !draft.rests; fillSettings(); });
+  $("pts").addEventListener("change", () => { draft.pts = Math.min(50, Math.max(5, Math.round(+$("pts").value) || 21)); draft.cap = Math.max(draft.cap, draft.pts); fillSettings(); });
+  $("cap").addEventListener("change", () => { draft.cap = Math.min(60, Math.max(draft.pts, Math.round(+$("cap").value) || draft.pts)); fillSettings(); });
+  $("setDone").addEventListener("click", () => {
+    const wasDouble = S.cfg.type === "double";
+    S.cfg = { ...draft };
+    if (S.cfg.type === "double" && !wasDouble) S.names = { a: S.names.a.includes("/") ? S.names.a : "選手 A / 選手 C", b: S.names.b.includes("/") ? S.names.b : "選手 B / 選手 D" };
+    if (S.cfg.type === "single" && wasDouble) S.names = { a: S.names.a.split("/")[0].trim() || "選手 A", b: S.names.b.split("/")[0].trim() || "選手 B" };
+    save(); render(); $("setOv").hidden = true;
+  });
+  $("newGame").addEventListener("click", () => { $("setOv").hidden = true; $("confirmOv").hidden = false; });
+  $("cNo").addEventListener("click", () => ($("confirmOv").hidden = true));
+  $("cYes").addEventListener("click", () => { $("confirmOv").hidden = true; newMatch(); });
+  $("resNew").addEventListener("click", () => { $("resOv").hidden = true; newMatch(); });
+  $("resBack").addEventListener("click", undo);
+  $("restGo").addEventListener("click", () => { closeRest(); save(); render(); });
+  $("restUndo").addEventListener("click", undo);
+  $("keyClose").addEventListener("click", () => ($("keyOv").hidden = true));
+  ["setOv", "confirmOv", "keyOv"].forEach((id) => $(id).addEventListener("click", (e) => { if (e.target.id === id) $(id).hidden = true; }));
+
+  /* ---------- wiring ---------- */
+  $("helpBtn").addEventListener("click", () => ($("keyOv").hidden = false));
+  $("fsBtn").addEventListener("click", Kit.fullscreen);
+  $("undoBtn").addEventListener("click", undo);
+  $("swapBtn").addEventListener("click", () => { S.swapped = !S.swapped; save(); render(); });
+  $("restBtn").addEventListener("click", () => startRest(S.score.a + S.score.b === 0 && S.games.length ? "game" : "mid"));
+  const leftSide = () => (S.swapped ? "b" : "a");
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "q") return rally(leftSide());
+    if (k === "p") return rally(other(leftSide()));
+    if (k === "z") return undo();
+    if (k === "x") { S.swapped = !S.swapped; save(); return render(); }
+    if (k === "m") return Kit.Music.toggle();
+    const n = parseInt(e.code.replace("Digit", ""), 10);
+    if (n >= 1 && n <= Pads.count) Pads.byIndex(n);
+  });
+
+  render();
+  if (S.over) showResult();
+  else if (S.rest) { const r = S.rest; startRest(r.kind); S.rest.until = r.until; S.rest.warned = r.warned; tickRest(); }
+})();
+</script>

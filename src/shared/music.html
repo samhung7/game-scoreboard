@@ -1,0 +1,36 @@
+<!-- music: Spotify embed (works without Premium) + local files -->
+<div class="overlay parked" id="muOv">
+  <div class="sheet" role="dialog" aria-labelledby="muTitle">
+    <h2 id="muTitle">音樂</h2>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabSp" aria-selected="true">Spotify</button>
+      <button role="tab" id="tabLo" aria-selected="false">手機裡的音樂</button>
+    </div>
+    <div id="paneSp" class="pane">
+      <p>貼上 Spotify 歌單、專輯或歌曲的分享連結。免費帳號也能用；瀏覽器有登入 Spotify 時可播完整歌曲，沒登入只能播 30 秒試聽。</p>
+      <div class="inline"><input class="txt" id="spUrl" placeholder="https://open.spotify.com/playlist/…" inputmode="url"><button class="btn primary" id="spLoad">載入</button></div>
+      <div class="embed" id="spBox"><div class="empty" id="spEmpty">還沒載入歌單</div><div id="spEmbed"></div></div>
+      <div class="actions" style="justify-content:flex-start">
+        <a class="btn" href="https://accounts.spotify.com/login" target="_blank" rel="noopener">登入 Spotify</a>
+        <a class="btn" id="spOpen" href="https://open.spotify.com" target="_blank" rel="noopener">在 Spotify 開啟</a>
+      </div>
+    </div>
+    <div id="paneLo" class="pane" hidden>
+      <p>從手機或平板選幾首歌，免帳號、可離線播放，音效響起時會自動把音量壓低。</p>
+      <div class="actions" style="justify-content:flex-start">
+        <span class="btn filebtn">＋ 選擇音樂檔<input type="file" id="loFiles" accept="audio/*" multiple aria-label="選擇音樂檔"></span>
+      </div>
+      <div class="tracks" id="loList"></div>
+      <div class="player">
+        <button class="btn" id="loPrev" aria-label="上一首">⏮</button>
+        <button class="btn primary" id="loPlay" aria-label="播放或暫停">▶</button>
+        <button class="btn" id="loNext" aria-label="下一首">⏭</button>
+        <input type="range" id="loVol" min="0" max="100" value="80" aria-label="音量">
+      </div>
+    </div>
+    <div class="hr"></div>
+    <div class="row"><label>播音效時讓音樂讓路<small>Spotify 會暫停一下再接著播，手機音樂會壓低音量</small></label>
+      <button class="switch" id="duck" role="switch" aria-checked="true" aria-label="播音效時讓音樂讓路"></button></div>
+    <div class="actions"><button class="btn" id="muClose">關閉（音樂繼續播）</button></div>
+  </div>
+</div>

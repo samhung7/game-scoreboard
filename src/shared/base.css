@@ -1,6 +1,6 @@
 /* Shared look for every board. Palette from coolors.co/palette/7e6c6c-f87575-ffa9a3-b9e6ff-5c95ff:
    coral for the home side and actions, cornflower blue for the away side, sky-blue LED clocks, blush highlights,
-   on a dark ground deepened from the palette's taupe so the board reads in a bright gym. Single dark look, like a real scoreboard. */
+   on a deep blue ground darkened from the palette's cornflower so the board reads in a bright gym. Single dark look, like a real scoreboard. */
 :root {
   --taupe: #7e6c6c;
   --coral: #f87575;
@@ -8,13 +8,13 @@
   --sky: #b9e6ff;
   --blue: #5c95ff;
 
-  --bg: #241e1e;             /* taupe, deepened */
-  --panel: #2f2727;
-  --panel-2: #3d3333;
-  --line: #564848;
+  --bg: #0d1628;             /* cornflower, deepened */
+  --panel: #142039;
+  --panel-2: #1d2d4f;
+  --line: #2d4371;
   --fg: #fbf6f5;
-  --muted: #c2b3b2;          /* taupe, lifted */
-  --ink: #241e1e;            /* text on coral / sky fills */
+  --muted: #a9bbd9;          /* cornflower, lifted */
+  --ink: #0d1628;            /* text on coral / sky fills */
   --home: var(--coral);
   --away: var(--blue);
   --led: var(--sky);         /* game clock */
@@ -107,7 +107,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .pad.music small { font-size: 11px; color: var(--muted); max-width: 108px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* sheets & overlays */
-.overlay { position: fixed; inset: 0; background: rgba(20, 14, 14, .76); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.overlay { position: fixed; inset: 0; background: rgba(6, 11, 22, .76); display: grid; place-items: center; padding: 16px; z-index: 10; }
 .overlay.parked { visibility: hidden; pointer-events: none; } /* keeps the music player alive while closed */
 .sheet {
   width: min(560px, 100%); max-height: calc(100% - 32px); overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 18px;

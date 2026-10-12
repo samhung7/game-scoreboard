@@ -32,6 +32,10 @@ HEAD = """<!doctype html>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script>/* language: load the translation table before the page is drawn (see js/i18n.js) */
+(function(){var l;try{l=localStorage.getItem("scoreboard-lang")}catch(e){}if(!l){var n=(navigator.language||"zh-TW").toLowerCase();l=n.indexOf("zh")===0?(/cn|sg|hans/.test(n)?"zh-Hans":"zh-Hant"):n.indexOf("ja")===0?"ja":n.indexOf("ko")===0?"ko":"en"}if(l!=="zh-Hant")document.write('<script src="js/i18n/'+l+'.js"></'+'script>')})();
+</script>
+<script src="js/i18n.js"></script>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}[hidden]{display:none!important}</style>
 </head>
 <body>

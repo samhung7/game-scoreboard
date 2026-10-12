@@ -1,6 +1,9 @@
 # 比賽記分板 (Game Scoreboard)
 
+**App: https://samhung7.github.io/game-scoreboard/**
+
 Phone- and tablet-friendly scoreboards with a built-in DJ panel. Add it to the home screen to use it like an app; it keeps working offline.
+Languages: 繁體中文, 简体中文, English, 日本語, 한국어 (picked from the phone's language, changeable in each board's settings).
 
 - **籃球** (`index.html`): 5v5 / 3v3, game clock with periods and overtime, shot clock, team fouls, timeouts.
 - **羽球** (`badminton.html`): 21-point or 15-point system, best of 1/3/5, serve and service court tracking, interval and between-game rest timers.
@@ -19,6 +22,7 @@ src/
   css/basketball.css, css/badminton.css, css/rally.css
   js/config.js                 site settings (Spotify Client ID)
   js/spotify.js                Spotify sign-in (PKCE) and playlist list
+  js/i18n.js, js/i18n/*.js     language switch and translation tables (keys are the Chinese source text)
   js/kit.js                    shared sounds, DJ pads, music player, score reel, haptics, wake lock
   js/basketball.js, js/badminton.js
   js/rally.js                  board engine for volleyball, tennis, pickleball, table tennis
@@ -27,6 +31,7 @@ src/
   partials/rally.html          board markup shared by the rally-sport pages
   partials/sportnav.html       sport dropdown
 static/                        manifest, service worker, icons, sounds
+i18n/                          translation sources (<lang>.json keyed by the Chinese text) and the scripts that build src/js/i18n/*.js
 ```
 
 `build.py` adds the `<head>` (PWA tags) around each page, pulls in partials and copies everything to `site/`:

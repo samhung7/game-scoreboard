@@ -18,10 +18,10 @@
   display: flex; flex-direction: column; align-items: center; padding: 4px 26px 6px; border-radius: 14px; background: #000; border: 2px solid var(--line);
   min-width: 7ch;
 }
-.game .t { font-family: var(--f-clock); font-size: clamp(44px, 12vmin, 112px); line-height: 1.05; color: var(--led); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px color-mix(in srgb, var(--steel) 70%, transparent); }
+.game .t { font-family: var(--f-clock); font-size: clamp(44px, 12vmin, 112px); line-height: 1.05; color: var(--led); font-variant-numeric: tabular-nums; text-shadow: 0 0 16px color-mix(in srgb, var(--sky) 70%, transparent); }
 .game .t.target { font-family: var(--f-score); font-weight: 900; letter-spacing: .02em; }
 .game .sub { font-size: 12px; color: var(--muted); letter-spacing: .12em; }
-.game .per { color: var(--red-500); font-weight: 700; }
+.game .per { color: var(--blush); font-weight: 700; }
 .game.paused .t { opacity: .55; }
 .clockctl { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .btn.shotbtn { color: var(--shot); font-family: var(--f-clock); font-size: 18px; }
@@ -33,7 +33,7 @@
 .fouls, .tos { display: inline-flex; align-items: center; gap: 6px; }
 .fouls .fn { font: 900 22px var(--f-score); color: var(--fg); min-width: 1.4ch; text-align: center; font-variant-numeric: tabular-nums; }
 .mini { width: 30px; height: 30px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); font-weight: 700; display: grid; place-items: center; }
-.bonus { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--red-700); color: var(--white); letter-spacing: .06em; }
+.bonus { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: var(--coral); color: var(--ink); letter-spacing: .06em; }
 .dots { display: inline-flex; gap: 5px; }
 .dot { width: 18px; height: 18px; border-radius: 50%; background: var(--tc); border: 2px solid var(--tc); }
 .dot.used { background: transparent; border-color: var(--line); }
@@ -140,7 +140,7 @@
       <div class="inline"><input class="num" id="timeouts" type="number" min="0" max="8" inputmode="numeric"> 次</div></div>
 
     <div class="hr"></div>
-    <p id="setWarn" hidden style="color: var(--red-500)">大錶和目標得分至少要開一個，比賽才有結束條件。</p>
+    <p id="setWarn" hidden style="color: var(--coral)">大錶和目標得分至少要開一個，比賽才有結束條件。</p>
     <div class="actions">
       <button class="btn danger" id="newGame">開新比賽</button>
       <button class="btn primary" id="setDone">套用</button>

@@ -13,7 +13,7 @@
 .games .gs { display: flex; align-items: center; gap: 14px; font: 900 clamp(40px, 10vmin, 96px)/1 var(--f-score); font-variant-numeric: tabular-nums; }
 .games .gs .ga { color: var(--home); } .games .gs .gb { color: var(--away); } .games .gs .sep { color: var(--muted); font-size: .5em; }
 .games .sub { font-size: 12px; color: var(--muted); letter-spacing: .12em; }
-.games .sub .per { color: var(--red-500); font-weight: 700; }
+.games .sub .per { color: var(--blush); font-weight: 700; }
 .history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font: 14px var(--f-clock); color: var(--muted); }
 .history:empty { display: none; }
 .history span { padding: 1px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
@@ -23,17 +23,17 @@
 .board.swapped .teams .away { order: -1; }
 .team { display: grid; grid-template-rows: auto 1fr auto; gap: 8px; min-height: 0; min-width: 0; }
 .stats { position: absolute; top: 10px; left: 10px; z-index: 1; display: flex; align-items: center; gap: 8px; font-size: 13px; pointer-events: none; }
-.serve { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--tc); color: var(--navy-900); font-weight: 700; }
-.team.away .serve { color: var(--navy-900); }
+.serve { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--tc); color: var(--ink); font-weight: 700; }
+.team.away .serve { color: var(--ink); }
 .serve svg { width: 16px; height: 16px; }
-.court { color: var(--fg); font-weight: 700; text-shadow: 0 1px 2px var(--navy-900); }
+.court { color: var(--fg); font-weight: 700; text-shadow: 0 1px 2px var(--ink); }
 .pts { grid-template-columns: 3fr 1fr; }
 .pts button.plus { min-height: 60px; }
 .pts button.minus { min-height: 60px; }
 
 /* rest countdown */
-.rest .clock { font: clamp(64px, 18vmin, 140px)/1 var(--f-clock); color: var(--white); font-variant-numeric: tabular-nums; }
-.rest .clock.warn { color: var(--red-500); }
+.rest .clock { font: clamp(64px, 18vmin, 140px)/1 var(--f-clock); color: var(--fg); font-variant-numeric: tabular-nums; }
+.rest .clock.warn { color: var(--coral); }
 
 @media (max-width: 520px) { .games { padding-inline: 16px; } .pts button.plus, .pts button.minus { min-height: 52px; } .score .lead { top: auto; bottom: 14px; } }
 .board { display: contents; }

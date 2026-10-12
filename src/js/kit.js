@@ -76,7 +76,7 @@ const Kit = (() => {
       const c = ctx(), t = c.currentTime;
       [[293, 0], [277, 0.45], [261, 0.9], [247, 1.35]].forEach(([f, st], i) => {
         const d = i === 3 ? 1.3 : 0.4; const lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(master());
-        const o = tone("sawtooth", f, t + st, d, 0.25, lp);
+        const o = tone("sawtooth", f, t + st, d, 0.6, lp);
         if (i === 3) { const v = c.createOscillator(); const vg = c.createGain(); v.frequency.value = 6; vg.gain.value = 6; v.connect(vg).connect(o.frequency); v.start(t + st + 0.2); v.stop(t + st + d); o.frequency.linearRampToValueAtTime(f * 0.93, t + st + d); }
       });
     },
@@ -274,7 +274,7 @@ const Kit = (() => {
   /* ---------- score reel: drag down = more points, drag up = fewer ---------- */
   function reel({ box, strip, get, set, max = 200, locked = () => false, commit, tap }) {
     let drag = null, wheelAcc = 0;
-    const stepPx = () => Math.max(44, Math.min(110, box.clientHeight * 0.3)); // finger travel per point
+    const stepPx = () => Math.max(64, Math.min(160, box.clientHeight * 0.45)); // finger travel per point
     const reelH = () => box.clientHeight;                                      // spacing between numbers
     const clamp = (n) => Math.min(max, Math.max(0, n));
     const offset = (frac, snap) => { strip.classList.toggle("snap", !!snap); strip.style.transform = `translateY(${frac * reelH()}px)`; };
@@ -307,10 +307,10 @@ const Kit = (() => {
       if (tap && e.type === "pointerup" && d.moved < 10 && d.last === d.base && e.timeStamp - d.t0 < 500) { offset(0, true); haptic(); tap(); return; }
       const [t0, y0] = d.hist[0], [t1, y1] = d.hist[d.hist.length - 1];
       const v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0; // px per ms, downward positive
-      const extra = Math.abs(v) > 1.2 ? Math.max(-3, Math.min(3, Math.round(v * 2))) : 0; // only a hard flick adds a few more
+      const extra = Math.abs(v) > 1.6 ? Math.max(-2, Math.min(2, Math.round(v))) : 0; // only a hard flick adds a few more
       offset(0, true);
       const target = clamp(d.last + extra);
-      const spin = () => { const n = get(); if (n === target) return commit(d.base); set(n + Math.sign(target - n), true); draw(); haptic(); setTimeout(spin, 110); };
+      const spin = () => { const n = get(); if (n === target) return commit(d.base); set(n + Math.sign(target - n), true); draw(); haptic(); setTimeout(spin, 150); };
       spin();
     };
     box.addEventListener("pointerup", end);
@@ -318,7 +318,7 @@ const Kit = (() => {
     box.addEventListener("wheel", (e) => {
       e.preventDefault(); if (locked()) return;
       const base = get(); wheelAcc += e.deltaY;
-      while (Math.abs(wheelAcc) >= 80) { const s = Math.sign(wheelAcc); wheelAcc -= s * 80; set(clamp(get() + s), true); }
+      while (Math.abs(wheelAcc) >= 120) { const s = Math.sign(wheelAcc); wheelAcc -= s * 120; set(clamp(get() + s), true); }
       draw(); commit(base);
     }, { passive: false });
     box.addEventListener("keydown", (e) => {

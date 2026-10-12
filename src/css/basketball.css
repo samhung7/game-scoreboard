@@ -19,6 +19,11 @@
 .clockctl { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .btn.shotbtn { color: var(--shot); font-family: var(--f-clock); font-size: 18px; }
 .btn.shotbtn.running { border-color: var(--shot); }
+.timeset { display: grid; gap: 8px; }
+.timeset .mmss { display: flex; justify-content: center; align-items: center; gap: 6px; font: 900 32px var(--f-clock); }
+.timeset .num.big { width: 96px; }
+.timeset .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.timeset .steps .btn { padding: 0 6px; font-size: 15px; }
 
 .teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 0; }
 .team { display: grid; grid-template-rows: auto auto 1fr auto; gap: 8px; min-height: 0; min-width: 0; }
@@ -32,6 +37,7 @@
 .dot.used { background: transparent; border-color: var(--line); }
 
 @media (max-width: 520px) {
+  .clockctl .lbl { display: none; } /* icon only on phones so the row stays on one line */
   .game { padding-inline: 16px; }
   .stats { justify-content: center; }
   .dot { width: 14px; height: 14px; }

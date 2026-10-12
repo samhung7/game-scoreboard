@@ -288,6 +288,44 @@
   $("shot").addEventListener("click", () => { if (!S.cfg.sOn) return; if (shotFollowsMain()) resetShot(false); else setShotRunning(!S.shotRunning); });
   $("shotRun").addEventListener("click", () => setShotRunning(!S.shotRunning));
   $("shotFull").addEventListener("click", () => resetShot(false));
+
+  /* ---------- set a clock by hand: "✎ 調時間" button, or long-press either clock ---------- */
+  let tsDraft = null;
+  function openTime() {
+    setRunning(false); setShotRunning(false);
+    tsDraft = { g: Math.ceil(S.gameMs / 1000), s: Math.ceil(S.shotMs / 1000) };
+    $("tsGame").hidden = !clockActive(); $("tsShot").hidden = !S.cfg.sOn;
+    fillTime(); $("timeOv").hidden = false;
+  }
+  function fillTime() {
+    $("tsMin").value = Math.floor(tsDraft.g / 60); $("tsSec").value = String(tsDraft.g % 60).padStart(2, "0"); $("tsShotN").value = tsDraft.s;
+  }
+  const clampG = (n) => Math.min(99 * 60 + 59, Math.max(0, Math.round(n) || 0));
+  const clampS = (n) => Math.min(99, Math.max(0, Math.round(n) || 0));
+  $("timeOv").addEventListener("click", (e) => {
+    const g = e.target.dataset?.step, s = e.target.dataset?.sstep;
+    if (g) { tsDraft.g = clampG(tsDraft.g + +g); fillTime(); }
+    if (s) { tsDraft.s = clampS(tsDraft.s + +s); fillTime(); }
+    if (e.target.id === "timeOv") $("timeOv").hidden = true;
+  });
+  ["tsMin", "tsSec"].forEach((id) => $(id).addEventListener("change", () => { tsDraft.g = clampG((+$("tsMin").value || 0) * 60 + Math.min(59, +$("tsSec").value || 0)); fillTime(); }));
+  $("tsShotN").addEventListener("change", () => { tsDraft.s = clampS(+$("tsShotN").value); fillTime(); });
+  $("tsCancel").addEventListener("click", () => ($("timeOv").hidden = true));
+  $("tsDone").addEventListener("click", () => {
+    ["tsMin", "tsSec", "tsShotN"].forEach((id) => $(id).dispatchEvent(new Event("change"))); // take what was typed even without leaving the field
+    if (clockActive()) S.gameMs = tsDraft.g * 1000;
+    if (S.cfg.sOn) S.shotMs = tsDraft.s * 1000;
+    $("timeOv").hidden = true; save(); render();
+  });
+  $("timeBtn").addEventListener("click", openTime);
+  let pressTimer = 0, pressed = false;
+  ["game", "shot"].forEach((id) => {
+    const el = $(id);
+    el.addEventListener("pointerdown", () => { pressed = false; clearTimeout(pressTimer); pressTimer = setTimeout(() => { pressed = true; Kit.haptic(); openTime(); }, 550); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => el.addEventListener(ev, () => clearTimeout(pressTimer)));
+    el.addEventListener("click", (e) => { if (pressed) { pressed = false; e.stopImmediatePropagation(); } }, true); // a long press is not also a tap
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+  });
   $("shotShort").addEventListener("click", () => resetShot(true));
 
   document.addEventListener("keydown", (e) => {

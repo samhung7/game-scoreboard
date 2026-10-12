@@ -13,7 +13,9 @@ src/
   index.html, badminton.html   page markup
   css/base.css                 shared look (palette, buttons, sheets, score reel, DJ strip)
   css/basketball.css, css/badminton.css
-  js/kit.js                    shared sounds, DJ pads, music player, score reel, wake lock
+  js/config.js                 site settings (Spotify Client ID)
+  js/spotify.js                Spotify sign-in (PKCE) and playlist list
+  js/kit.js                    shared sounds, DJ pads, music player, score reel, haptics, wake lock
   js/basketball.js, js/badminton.js
   partials/music.html          music sheet markup used by both pages
 static/                        manifest, service worker, icons, sounds
@@ -31,3 +33,9 @@ Pushing to `main` builds and deploys `site/` to GitHub Pages (see `.github/workf
 ## Replacing a sound with a recording
 
 Put an audio file in `static/sounds/` and list it in `static/sounds/manifest.json`, e.g. `{"cheer": "cheer.mp3"}`. Keys: `cheer`, `airhorn`, `sadhorn`, `brick`, `coin`, `swish`, `smash`, `defense`, `buzzer`.
+
+## Spotify sign-in
+
+1. Create an app at https://developer.spotify.com/dashboard (Web API) with Redirect URI `https://samhung7.github.io/game-scoreboard/`.
+2. Put its Client ID in `src/js/config.js` (it is public, no secret is needed).
+3. While the app is in development mode, add each Spotify account that should sign in under the app's User Management.

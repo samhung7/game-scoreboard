@@ -7,12 +7,16 @@
       <button role="tab" id="tabLo" aria-selected="false">手機裡的音樂</button>
     </div>
     <div id="paneSp" class="pane">
-      <p>貼上 Spotify 歌單、專輯或歌曲的分享連結。免費帳號也能用；瀏覽器有登入 Spotify 時可播完整歌曲，沒登入只能播 30 秒試聽。</p>
-      <div class="inline"><input class="txt" id="spUrl" placeholder="https://open.spotify.com/playlist/…" inputmode="url"><button class="btn primary" id="spLoad">載入</button></div>
-      <div class="embed" id="spBox"><div class="empty" id="spEmpty">還沒載入歌單</div><div id="spEmbed"></div></div>
+      <div class="account" id="spAccount"></div>
+      <div class="lists" id="spLists" hidden></div>
+      <details class="paste" id="spPaste">
+        <summary>或貼上歌單分享連結</summary>
+        <div class="inline"><input class="txt" id="spUrl" placeholder="https://open.spotify.com/playlist/…" inputmode="url"><button class="btn primary" id="spLoad">載入</button></div>
+      </details>
+      <div class="embed" id="spBox"><div class="empty" id="spEmpty">選一個歌單就會出現在這裡</div><div id="spEmbed"></div></div>
+      <p class="note">在這裡播放時，瀏覽器沒登入 Spotify 只能聽 30 秒試聽（iPhone 常見）。想聽完整歌曲，按「在 Spotify App 播放」，再打開下方「和其他 App 的音樂一起播」，音效就會疊在音樂上。</p>
       <div class="actions" style="justify-content:flex-start">
-        <a class="btn" href="https://accounts.spotify.com/login" target="_blank" rel="noopener">登入 Spotify</a>
-        <a class="btn" id="spOpen" href="https://open.spotify.com" target="_blank" rel="noopener">在 Spotify 開啟</a>
+        <a class="btn" id="spOpen" href="https://open.spotify.com" target="_blank" rel="noopener">在 Spotify App 播放</a>
       </div>
     </div>
     <div id="paneLo" class="pane" hidden>
@@ -29,6 +33,8 @@
       </div>
     </div>
     <div class="hr"></div>
+    <div class="row"><label>和其他 App 的音樂一起播<small>音效疊在 Spotify App 的音樂上，不會把它停掉（iPhone 需關閉靜音模式才聽得到音效）</small></label>
+      <button class="switch" id="mix" role="switch" aria-checked="false" aria-label="和其他 App 的音樂一起播"></button></div>
     <div class="row"><label>播音效時讓音樂讓路<small>Spotify 會暫停一下再接著播，手機音樂會壓低音量</small></label>
       <button class="switch" id="duck" role="switch" aria-checked="true" aria-label="播音效時讓音樂讓路"></button></div>
     <div class="actions"><button class="btn" id="muClose">關閉（音樂繼續播）</button></div>

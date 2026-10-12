@@ -157,6 +157,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .embed > div { width: 100%; }
 .embed iframe { display: block; width: 100%; border: 0; }
 .embed .empty { padding: 16px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.account { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.account .who { flex: 1; min-width: 0; color: var(--muted); font-size: 14px; }
+.account .who strong { color: var(--fg); }
+.lists { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; max-height: 220px; overflow-y: auto; }
+.lists button { display: grid; grid-template-columns: 40px 1fr; gap: 8px; align-items: center; text-align: left; padding: 6px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); min-width: 0; }
+.lists button.cur { border-color: var(--ok); }
+.lists img, .lists .noimg { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: var(--panel-2); }
+.lists .t { min-width: 0; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lists .t small { display: block; font-weight: 400; color: var(--muted); }
+.paste summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+.paste .inline { margin-top: 8px; }
+.sheet p.note { font-size: 12px; }
 .tracks { display: grid; gap: 4px; max-height: 180px; overflow-y: auto; }
 .tracks button { text-align: left; padding: 8px 10px; border-radius: 8px; background: var(--bg); border: 1px solid transparent; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tracks button.cur { border-color: var(--ok); color: var(--ok); }

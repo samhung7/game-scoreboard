@@ -4,7 +4,9 @@ const Kit = (() => {
 
   /* ---------- audio engine: effects are synthesized; a recording in sounds/ replaces one ---------- */
   let ac;
-  const ctx = () => { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; };
+  const ctx = () => { if (!ac) { applyMix(); ac = new (window.AudioContext || window.webkitAudioContext)(); } if (ac.state === "suspended") ac.resume(); return ac; };
+  // "ambient" lets effects play over music from another app (Spotify) instead of stopping it; Safari 17+ only
+  const applyMix = () => { try { if (navigator.audioSession) navigator.audioSession.type = mPrefs.mix ? "ambient" : "playback"; } catch (e) {} };
   const master = () => { const c = ctx(); if (!c._m) { c._m = c.createGain(); c._m.gain.value = 0.9; c._m.connect(c.destination); } return c._m; };
   const noiseBuf = (c, sec) => { const b = c.createBuffer(1, Math.max(1, c.sampleRate * sec), c.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
   const env = (g, t, a, peak, d) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); };
@@ -109,7 +111,7 @@ const Kit = (() => {
 
   /* ---------- music: Spotify embed (works without Premium) + local files ---------- */
   const MKEY = "scoreboard-music";
-  let mPrefs = { duck: true, spUrl: "" };
+  let mPrefs = { duck: true, spUrl: "", mix: false };
   try { mPrefs = { ...mPrefs, ...JSON.parse(localStorage.getItem(MKEY) || "{}") }; } catch (e) {}
   const mSave = () => { try { localStorage.setItem(MKEY, JSON.stringify(mPrefs)); } catch (e) {} };
   const Music = (() => {
@@ -135,14 +137,14 @@ const Kit = (() => {
       const uri = spUri(url), empty = $("spEmpty");
       if (!uri) { empty.hidden = false; empty.textContent = "看不懂這個連結。請在 Spotify 按「分享 → 複製連結」再貼上。"; return; }
       mPrefs.spUrl = url; mSave();
-      $("spOpen").href = url.startsWith("http") ? url : "https://open.spotify.com";
+      $("spOpen").href = uri.replace(/^spotify:(\w+):(\w+)$/, "https://open.spotify.com/$1/$2");
       empty.hidden = false; empty.textContent = "載入中…";
       try {
         const IFrameAPI = await loadApi();
-        if (sp) { sp.loadUri(uri); empty.hidden = true; return; }
+        if (sp) { sp.loadUri(uri); sp.play?.(); empty.hidden = true; return; }
         const host = document.createElement("div"); $("spEmbed").replaceChildren(host);
         IFrameAPI.createController(host, { uri, width: "100%", height: 152 }, (c) => {
-          sp = c; empty.hidden = true;
+          sp = c; empty.hidden = true; c.play?.();
           c.addListener("playback_update", (e) => { spPaused = e.data.isPaused; onChange(); });
         });
       } catch (e) {
@@ -192,7 +194,48 @@ const Kit = (() => {
       $("muClose").addEventListener("click", () => $("muOv").classList.add("parked"));
       $("muOv").addEventListener("click", (e) => { if (e.target.id === "muOv") $("muOv").classList.add("parked"); });
       if (mPrefs.spUrl) $("spUrl").value = mPrefs.spUrl;
+      $("mix").setAttribute("aria-checked", String(mPrefs.mix));
+      $("mix").addEventListener("click", () => { mPrefs.mix = !mPrefs.mix; $("mix").setAttribute("aria-checked", String(mPrefs.mix)); mSave(); applyMix(); });
+      $("spLists").addEventListener("click", (e) => {
+        const b = e.target.closest("button[data-id]"); if (!b) return;
+        $("spLists").querySelectorAll(".cur").forEach((x) => x.classList.remove("cur")); b.classList.add("cur");
+        loadSpotify("spotify:playlist:" + b.dataset.id);
+      });
       renderList();
+      renderAccount();
+      SpotifyAuth.handleRedirect().then((r) => {
+        if (!r || r.moved) return;
+        $("muOv").classList.remove("parked");
+        if (r.error) accountMsg(r.error === "access_denied" ? "你取消了 Spotify 登入。" : "Spotify 登入沒有完成，請再試一次。");
+        renderAccount();
+      });
+    }
+
+    /* Spotify account: sign in, then pick one of your playlists */
+    const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    function accountMsg(t) { const n = document.createElement("p"); n.className = "note"; n.textContent = t; $("spAccount").after(n); setTimeout(() => n.remove(), 6000); }
+    async function renderAccount() {
+      const box = $("spAccount"), lists = $("spLists");
+      if (!SpotifyAuth.configured()) {
+        box.innerHTML = `<span class="who">Spotify 帳號登入還沒設定好，目前可以先貼歌單連結播放。</span>`;
+        lists.hidden = true; $("spPaste").open = true; return;
+      }
+      if (!SpotifyAuth.signedIn()) {
+        box.innerHTML = `<button class="btn primary" id="spLogin">用 Spotify 帳號登入</button><span class="who">登入後會列出你的歌單，免費帳號也可以。</span>`;
+        $("spLogin").addEventListener("click", () => SpotifyAuth.login().catch(() => accountMsg("Spotify 登入還沒設定好。")));
+        lists.hidden = true; return;
+      }
+      box.innerHTML = `<span class="who">讀取帳號中…</span><button class="btn" id="spLogout">登出</button>`;
+      $("spLogout").addEventListener("click", () => { SpotifyAuth.logout(); renderAccount(); });
+      try {
+        const [me, pls] = await Promise.all([SpotifyAuth.me(), SpotifyAuth.playlists()]);
+        box.querySelector(".who").innerHTML = `已登入 <strong>${esc(me.display_name || me.id)}</strong>，共 ${pls.length} 個歌單`;
+        lists.innerHTML = pls.map((p) => `<button data-id="${esc(p.id)}">${p.img ? `<img src="${esc(p.img)}" alt="" loading="lazy">` : `<span class="noimg"></span>`}<span class="t">${esc(p.name)}<small>${p.count !== "" ? esc(p.count) + " 首" : ""}</small></span></button>`).join("") || `<p>這個帳號還沒有歌單。</p>`;
+        lists.hidden = false;
+      } catch (e) {
+        if (e.message === "signed-out") return renderAccount();
+        box.querySelector(".who").textContent = e.message === "forbidden" ? "這個 Spotify 帳號還沒被加進本站的使用者名單，請管理員在 Spotify 開發者後台加入。" : "讀不到歌單，請稍後再試。";
+      }
     }
     return {
       init, toggle, duck,
@@ -232,7 +275,7 @@ const Kit = (() => {
   /* ---------- score reel: drag down = more points, drag up = fewer ---------- */
   function reel({ box, strip, get, set, max = 200, locked = () => false, commit }) {
     let drag = null, wheelAcc = 0;
-    const stepPx = () => Math.max(28, Math.min(56, box.clientHeight * 0.16)); // finger travel per point
+    const stepPx = () => Math.max(44, Math.min(110, box.clientHeight * 0.3)); // finger travel per point
     const reelH = () => box.clientHeight;                                      // spacing between numbers
     const clamp = (n) => Math.min(max, Math.max(0, n));
     const offset = (frac, snap) => { strip.classList.toggle("snap", !!snap); strip.style.transform = `translateY(${frac * reelH()}px)`; };
@@ -254,7 +297,7 @@ const Kit = (() => {
       let n = drag.base + k;
       if (n >= max) { n = max; frac = Math.min(0, frac) * 0.3; } // rubber band at the ends
       if (n <= 0) { n = 0; frac = Math.max(0, frac) * 0.3; }
-      if (n !== drag.last) { drag.last = n; set(n, true); draw(); }
+      if (n !== drag.last) { drag.last = n; set(n, true); draw(); haptic(); }
       offset(frac);
       drag.hist.push([e.timeStamp, e.clientY]); if (drag.hist.length > 6) drag.hist.shift();
     });
@@ -263,10 +306,10 @@ const Kit = (() => {
       const d = drag; drag = null;
       const [t0, y0] = d.hist[0], [t1, y1] = d.hist[d.hist.length - 1];
       const v = t1 > t0 ? (y1 - y0) / (t1 - t0) : 0; // px per ms, downward positive
-      const extra = Math.abs(v) > 0.6 ? Math.round(v * 6) : 0; // a quick flick keeps the wheel turning
+      const extra = Math.abs(v) > 1.2 ? Math.max(-3, Math.min(3, Math.round(v * 2))) : 0; // only a hard flick adds a few more
       offset(0, true);
       const target = clamp(d.last + extra);
-      const spin = () => { const n = get(); if (n === target) return commit(d.base); set(n + Math.sign(target - n), true); draw(); setTimeout(spin, 45); };
+      const spin = () => { const n = get(); if (n === target) return commit(d.base); set(n + Math.sign(target - n), true); draw(); haptic(); setTimeout(spin, 110); };
       spin();
     };
     box.addEventListener("pointerup", end);
@@ -274,7 +317,7 @@ const Kit = (() => {
     box.addEventListener("wheel", (e) => {
       e.preventDefault(); if (locked()) return;
       const base = get(); wheelAcc += e.deltaY;
-      while (Math.abs(wheelAcc) >= 40) { const s = Math.sign(wheelAcc); wheelAcc -= s * 40; set(clamp(get() + s), true); }
+      while (Math.abs(wheelAcc) >= 80) { const s = Math.sign(wheelAcc); wheelAcc -= s * 80; set(clamp(get() + s), true); }
       draw(); commit(base);
     }, { passive: false });
     box.addEventListener("keydown", (e) => {
@@ -285,6 +328,35 @@ const Kit = (() => {
     return { draw };
   }
 
+  /* ---------- haptic tap: Android vibrates; iPhone (iOS 18+) has no vibrate API, but toggling a hidden switch control gives a tick ---------- */
+  let hapticLabel = null;
+  function haptic() {
+    try {
+      if (navigator.vibrate) { navigator.vibrate(12); return; }
+      if (!hapticLabel) {
+        hapticLabel = document.createElement("label"); hapticLabel.setAttribute("aria-hidden", "true");
+        hapticLabel.style.cssText = "position:fixed;left:-200px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
+        const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", ""); i.tabIndex = -1;
+        hapticLabel.appendChild(i); document.body.appendChild(hapticLabel);
+      }
+      hapticLabel.click();
+    } catch (e) {}
+  }
+  // every point button on every board
+  document.addEventListener("pointerdown", (e) => { if (e.target.closest(".pts button")) haptic(); });
+
+  /* ---------- in-page confirmation (the browser's confirm() is not used) ---------- */
+  function confirmBox({ title, text, ok = "確定", danger = true }) {
+    return new Promise((res) => {
+      const ov = document.createElement("div"); ov.className = "overlay";
+      ov.innerHTML = `<div class="sheet" role="alertdialog" aria-modal="true"><h2></h2><p></p><div class="actions"><button class="btn" data-a="no">取消</button><button class="btn ${danger ? "danger" : "primary"}" data-a="yes"></button></div></div>`;
+      ov.querySelector("h2").textContent = title; ov.querySelector("p").textContent = text; ov.querySelector("[data-a=yes]").textContent = ok;
+      const done = (v) => { ov.remove(); res(v); };
+      ov.addEventListener("click", (e) => { const a = e.target.dataset?.a; if (a) done(a === "yes"); else if (e.target === ov) done(false); });
+      document.body.appendChild(ov); ov.querySelector("[data-a=no]").focus();
+    });
+  }
+
   /* ---------- keep the screen on while a clock runs ---------- */
   let wake = null;
   function keepAwake(on) {
@@ -293,5 +365,5 @@ const Kit = (() => {
   }
   function fullscreen() { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()?.catch(() => {}); } catch (e) {} }
 
-  return { ctx, SFX, play, Music, pads, reel, keepAwake, fullscreen };
+  return { ctx, SFX, play, Music, pads, reel, keepAwake, fullscreen, haptic, confirm: confirmBox };
 })();

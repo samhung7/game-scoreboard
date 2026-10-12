@@ -186,6 +186,12 @@
   $("helpBtn").addEventListener("click", () => ($("keyOv").hidden = false));
   $("fsBtn").addEventListener("click", Kit.fullscreen);
   $("undoBtn").addEventListener("click", undo);
+  $("resetScore").addEventListener("click", async () => {
+    if (S.over || S.rest) return;
+    const ok = await Kit.confirm({ title: "這一局比分歸零？", text: "兩邊這一局的分數變回 0，已打完的局數不變。按錯可以用「復原」找回。", ok: "歸零" });
+    if (!ok) return;
+    S.undo.push(snapshot()); S.score = { a: 0, b: 0 }; S.midDone = false; save(); render();
+  });
   $("swapBtn").addEventListener("click", () => { S.swapped = !S.swapped; save(); render(); });
   $("restBtn").addEventListener("click", () => startRest(S.score.a + S.score.b === 0 && S.games.length ? "game" : "mid"));
   const leftSide = () => (S.swapped ? "b" : "a");

@@ -113,7 +113,7 @@ const Share = (() => {
       }
       announce(r.members || {});
       applyRole(); renderSheet();
-    }, () => { toast("連不上分享，請檢查網路"); });
+    }, failed);
     const mRef = rRef("members/" + uid);
     stopConn?.(); stopConn = fb.onValue(fb.ref(db, ".info/connected"), (s) => { if (s.val() && code === c) { fb.onDisconnect(fb.ref(db, `rooms/${c}/members/${uid}/online`)).set(false); fb.update(mRef, { online: true, seen: now() }).catch(() => {}); } });
   }
@@ -142,7 +142,7 @@ const Share = (() => {
         if (t.committed) { seenState = t.snapshot.val().state; watch(c); return; }
       }
       toast("暫時建立不了分享，請再試一次");
-    } catch (e) { console.error(e); toast("連不上分享，請檢查網路"); } finally { busy(false); }
+    } catch (e) { console.error(e); failed(e); } finally { busy(false); }
   }
   async function join(c, quiet) {
     c = (c || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
@@ -159,7 +159,7 @@ const Share = (() => {
       if (r.owner !== uid && store.get(board.key + "-own") == null) store.set(board.key + "-own", store.get(board.key) || "");
       await fb.update(fb.ref(db, `rooms/${c}/members/${uid}`), { ...memberData(m), req: r.members?.[uid]?.req || false });
       watch(c);
-    } catch (e) { console.error(e); toast("連不上分享，請檢查網路"); } finally { busy(false); }
+    } catch (e) { console.error(e); failed(e); } finally { busy(false); }
   }
   async function leave() {
     if (!room) return;
@@ -273,6 +273,9 @@ const Share = (() => {
     if (!ov) { buildSheet(); ov.addEventListener("click", onSheetClick); }
     ov.hidden = false; renderSheet();
   }
+
+  // the error code goes on screen so a failure on someone's phone can be diagnosed from a screenshot
+  const failed = (e) => toast(Share.tr("連不上分享，請檢查網路") + (e && (e.code || e.message) ? ` (${String(e.code || e.message).slice(0, 60)})` : ""));
 
   /* ---------- small notes at the bottom of the screen ---------- */
   let toastEl, toastT = 0;

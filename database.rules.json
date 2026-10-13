@@ -1,0 +1,33 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() || data.child('state/at').val() < now - 172800000) ? newData.child('owner').val() === auth.uid : data.child('owner').val() === auth.uid)",
+        ".validate": "$code.matches(/^[2-9A-HJ-NP-Z]{4}$/) && newData.hasChildren(['owner', 'sport'])",
+        "owner": { ".validate": "newData.isString()" },
+        "sport": { ".validate": "newData.isString() && newData.val().length < 20" },
+        "created": { ".validate": "newData.isNumber()" },
+        "editors": { "$uid": { ".validate": "newData.val() === true" } },
+        "state": {
+          ".write": "auth != null && data.parent().child('editors').child(auth.uid).val() === true",
+          ".validate": "newData.hasChildren(['json', 'at', 'by']) && newData.child('json').isString() && newData.child('json').val().length < 200000"
+        },
+        "members": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            "name": { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "avatar": { ".validate": "newData.isString() && newData.val().length <= 8" },
+            "online": { ".validate": "newData.isBoolean()" },
+            "req": { ".validate": "newData.isBoolean()" },
+            "seen": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

@@ -4,4 +4,6 @@ window.SCOREBOARD_CONFIG = {
   spotifyClientId: "a2ef01914d3e41459b1f1a1b835f305b",
   // donate page (Buy Me a Coffee, Ko-fi, Portaly...); empty hides the donate links
   donateUrl: "https://portaly.cc/samhungstudio",
+  // live sharing (js/share.js): the web app config from the Firebase console; null hides the share button
+  firebase: null,
 };

@@ -15,7 +15,7 @@
   };
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); S = { ...fresh(), ...o, cfg: { ...SP.defaults, ...o.cfg } }; } } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} Share.changed(); };
   const wins = (s) => S.units.filter((u) => u.w === s).length;
   const best = () => SP.best(S.cfg);
   const need = () => Math.ceil(best() / 2);
@@ -287,4 +287,22 @@
   render();
   if (S.over) showResult();
   else if (S.rest) { const r = S.rest; startRest(r.e); S.rest.until = r.until; S.rest.warned = r.warned; tickRest(); }
+
+  /* ---------- live sharing: someone else's board arrives here (js/share.js) ---------- */
+  Share.attach({
+    sport: SP.id, key: KEY, get: () => S,
+    apply(st, { shift }) {
+      const next = { ...fresh(), ...st, cfg: { ...SP.defaults, ...st.cfg } };
+      // times are on the sender's clock; move them onto this device's clock
+      if (next.startTs) next.startTs += shift;
+      if (next.endTs) next.endTs += shift;
+      if (next.rest) next.rest.until += shift;
+      clearInterval(restTimer); $("restOv").hidden = true; $("resOv").hidden = true;
+      Object.keys(S).forEach((k) => delete S[k]); Object.assign(S, next);
+      save(); render();
+      if (S.over) showResult();
+      else if (S.rest) { const r = S.rest; startRest(r.e); S.rest.until = r.until; S.rest.warned = r.warned; tickRest(); }
+      else Kit.keepAwake(false);
+    },
+  });
 })();

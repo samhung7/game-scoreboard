@@ -17,7 +17,7 @@
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) { const o = JSON.parse(raw); S = { ...fresh(), ...o, cfg: { ...PRESETS[o.mode || "5v5"], ...o.cfg } }; } } catch (e) {}
   S.running = false; S.shotRunning = false;
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} Share.changed(); };
 
   const Pads = Kit.pads($("pads"), "basketball");
 
@@ -352,4 +352,19 @@
 
   buildPts(); render();
   if (S.over) showResult(); else if (S.brk) showBreak();
+
+  /* ---------- live sharing: someone else's board arrives here (js/share.js) ---------- */
+  Share.attach({
+    sport: "basketball", key: KEY, get: () => S,
+    apply(st, { elapsed }) {
+      const next = { ...fresh(), ...st, cfg: { ...PRESETS[st.mode || "5v5"], ...st.cfg } };
+      Object.keys(S).forEach((k) => delete S[k]); Object.assign(S, next);
+      // a running clock kept running while the update travelled
+      if (S.running && clockActive()) S.gameMs = Math.max(0, S.gameMs - elapsed);
+      if (S.cfg.sOn && ((S.running && shotFollowsMain()) || S.shotRunning)) S.shotMs = Math.max(0, S.shotMs - elapsed);
+      $("resOv").hidden = true; $("brkOv").hidden = true;
+      save(); buildPts(); render(); awake(); loop();
+      if (S.over) showResult(); else if (S.brk) showBreak();
+    },
+  });
 })();

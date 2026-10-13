@@ -1,0 +1,7 @@
+{
+  "name": "scoreboard-firebase-bundle",
+  "private": true,
+  "description": "Bundles the parts of the Firebase SDK the share feature uses into src/js/vendor/firebase.js (npm install && npm run build)",
+  "scripts": { "build": "esbuild entry.js --bundle --format=esm --minify --target=es2020 --outfile=../../src/js/vendor/firebase.js" },
+  "devDependencies": { "esbuild": "^0.23.0", "firebase": "^10.14.1" }
+}

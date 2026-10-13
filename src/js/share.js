@@ -196,7 +196,7 @@ const Share = (() => {
   }
 
   /* ---------- viewers can look but not touch ---------- */
-  const ALLOW = ".dj, .sportsel, #shareBtn, #helpBtn, #fsBtn, #setBtn, #shareOv, #meOv, #keyOv, #muOv, .langsel, #setHelp, .donate, #brkBack, .overlay.parked";
+  const ALLOW = "[role=alertdialog], .dj, .sportsel, #shareBtn, #helpBtn, #fsBtn, #setBtn, #shareOv, #meOv, #keyOv, #muOv, .langsel, #setHelp, .donate, #brkBack, .overlay.parked";
   let nagAt = 0;
   function guard(e) {
     if (!document.body.classList.contains("viewonly")) return;

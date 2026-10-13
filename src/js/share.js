@@ -145,6 +145,7 @@ const Share = (() => {
     } catch (e) { console.error(e); failed(e); } finally { busy(false); }
   }
   async function join(c, quiet) {
+    c = String(c || "").match(/[?&]room=([0-9A-Za-z]{4})/)?.[1] || c; // a pasted link works as well as the code
     c = (c || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
     if (c.length !== 4) { toast("分享碼是 4 個字"); return; }
     const m = quiet ? me() : await ensureMe(); if (!m) return;
@@ -227,9 +228,9 @@ const Share = (() => {
         <button class="btn primary wide" data-a="create">建立分享</button>
         <div class="hr"></div>
         <label class="lbl" for="joinCode">加入別人的記分板</label>
-        <div class="joinrow"><input id="joinCode" class="codein" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" inputmode="text"><button class="btn primary" data-a="join">加入</button></div>`;
+        <div class="joinrow"><input id="joinCode" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD" inputmode="text"><button class="btn primary" data-a="join">加入</button></div>`;
       const inp = body.querySelector("#joinCode");
-      inp.addEventListener("input", () => (inp.value = inp.value.toUpperCase().replace(/[^0-9A-Z]/g, "")));
+      inp.addEventListener("input", () => { const m = inp.value.match(/[?&]room=([0-9A-Za-z]{4})/); inp.value = (m ? m[1] : inp.value).toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, 4); });
       inp.addEventListener("keydown", (e) => { if (e.key === "Enter") join(inp.value); });
       return;
     }
@@ -260,7 +261,8 @@ const Share = (() => {
     else if (a === "me") { const m = await askMe(false); if (m && room) fb.update(rRef("members/" + uid), { name: m.name, avatar: m.avatar }); renderSheet(); }
     else if (a === "copy") { try { await navigator.clipboard.writeText(link()); toast("連結已複製"); } catch (err) { prompt(Share.tr("複製這個連結："), link()); } }
     else if (a === "send") {
-      const data = { title: Share.tr("比賽記分板"), text: Share.tr(`一起看比分！分享碼 ${code}`), url: link() };
+      // url only: some share targets paste text and link together, which a browser can't open
+      const data = { title: Share.tr(`一起看比分！分享碼 ${code}`), url: link() };
       if (navigator.share) navigator.share(data).catch(() => {}); else { try { await navigator.clipboard.writeText(link()); toast("連結已複製"); } catch (err) {} }
     }
     else if (a === "ed") setEditor(b.dataset.id, b.getAttribute("aria-checked") !== "true");

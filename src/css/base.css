@@ -269,3 +269,13 @@ body.viewonly .board .score, body.viewonly input.name { cursor: default; }
   .sharebtn.live .code { font-size: 13px; letter-spacing: .06em; }
 }
 @media (max-width: 520px) { body.shared #targetChip .lbl, body.shared #targetChip .swap { display: none; } body.viewonly #targetChip { display: none; } }
+/* the share sheet never grows wider than the screen: grid and flex children may shrink below their content */
+.shbody { grid-template-columns: minmax(0, 1fr); }
+.shbody > *, #meOv .sheet > * { min-width: 0; }
+.codein { width: 0; }
+.joinrow .btn { flex: 0 0 auto; }
+/* narrow phones: the target chip gives up its label first, then shrinks, so the share and settings buttons stay on screen */
+@media (max-width: 430px) { #targetChip { flex-shrink: 1; min-width: 0; } #targetChip .lbl { display: none; } }
+@media (max-width: 380px) { .topbar .chipbtn { flex-shrink: 1; min-width: 0; } .topbar .chipbtn .swap { display: none; } .topbar { gap: 6px; } }
+.sharerow .btn, .actions .btn { min-width: 0; white-space: normal; }
+.members .tag { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
